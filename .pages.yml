@@ -1,0 +1,54 @@
+# .pages.yml  – Pages CMS configuration
+backend:
+  name: github
+  repo: Writehand-Solutions/prompt-stash   # ← change if your repo slug differs
+  branch: main
+
+media_folder: "public/uploads"
+public_folder: "/uploads"
+
+collections:
+  - name: "prompts"              # directory name inside the repo
+    label: "Prompts"             # shows up in the CMS sidebar
+    label_singular: "Prompt"
+    folder: "prompts"            # Pages CMS will create this folder if missing
+    create: true                 # allow “New Prompt” button
+    slug: "{{slug}}"
+    format: "frontmatter"
+    extension: "md"
+
+    fields:
+      # ── core metadata ────────────────────────────────────────────────
+      - { label: "ID",          name: "id",          widget: "string" }
+      - { label: "Locked",      name: "locked",      widget: "boolean", default: false }
+      - { label: "Title",       name: "title",       widget: "string" }
+      - { label: "Description", name: "description", widget: "text", required: false }
+      - { label: "Template",    name: "template",    widget: "markdown" }
+
+      # ── input variables list ────────────────────────────────────────
+      - label: "Input Variables"
+        name: "input_variables"
+        widget: "list"
+        summary: "{{fields.name}} ({{fields.type}})"
+        fields:
+          - { label: "Name",                name: "name",                widget: "string" }
+          - { label: "Description",         name: "description",         widget: "string" }
+          - { label: "Type",                name: "type",                widget: "select",
+              options: ["string", "integer", "number", "boolean", "json"] }
+          - { label: "Required",            name: "required",            widget: "boolean", default: true }
+          - { label: "Variable Validation", name: "variable_validation", widget: "string", required: false }
+
+      # ── tags list ────────────────────────────────────────────────────
+      - label: "Tags"
+        name: "tags"
+        widget: "list"
+        allow_add: true
+        field: { label: "Tag", name: "tag", widget: "string" }
+
+      # ── timestamps & flag ────────────────────────────────────────────
+      - { label: "Created At",  name: "created_at",  widget: "datetime",
+          format: "YYYY-MM-DDTHH:mm:ss[Z]" }
+      - { label: "Updated At",  name: "updated_at",  widget: "datetime",
+          required: false, format: "YYYY-MM-DDTHH:mm:ss[Z]" }
+      - { label: "Bookmarked",  name: "bookmarked",  widget: "boolean", default: false }
+
