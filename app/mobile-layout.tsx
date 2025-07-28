@@ -113,7 +113,7 @@ export function MobileLayout() {
             </TabsContent>
             <TabsContent value="edit" className="m-0">
               <ScrollArea className="h-[calc(100vh-60px)]">
-                <div className="flex-1 overflow-y-auto bg-white dark:bg-black ">
+                <div className="flex-1 overflow-y-auto bg-white">
                   <AgentPromptEditor
                     prompt={
                       prompts.find((item) => item.id === prompt.selected) ||

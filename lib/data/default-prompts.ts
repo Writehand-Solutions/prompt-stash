@@ -31,6 +31,7 @@ export const promptStructureSchema = z.object({
   created_at: z.string(),
   updated_at: z.string().nullable(),
   bookmarked: z.boolean(),
+  creator: z.string().optional(),
 })
 
 export type PromptStructure = z.infer<typeof promptStructureSchema>
@@ -70,6 +71,7 @@ export const prompts: PromptStructure[] = [
     created_at: "2024-03-15T10:00:00Z",
     updated_at: null,
     bookmarked: false,
+    creator: "system",
   },
   {
     id: "2b3c4d5e-6f7g-8h9i-0j1k-2l3m4n5o6p7q",
@@ -103,6 +105,7 @@ export const prompts: PromptStructure[] = [
     created_at: "2024-03-15T11:00:00Z",
     updated_at: null,
     bookmarked: false,
+    creator: "system",
   },
   {
     id: "3c4d5e6f-7g8h-9i0j-1k2l-3m4n5o6p7q8r",
@@ -139,6 +142,7 @@ export const prompts: PromptStructure[] = [
     created_at: "2024-03-15T12:00:00Z",
     updated_at: null,
     bookmarked: false,
+    creator: "system",
   },
   {
     id: "4d5e6f7g-8h9i-0j1k-2l3m-4n5o6p7q8r9s",

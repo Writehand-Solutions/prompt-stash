@@ -26,7 +26,7 @@ export function AgentChatVariableInputs({
               type="text"
               value={variableValues[variable] || ""}
               onChange={(e) => onVariableChange(variable, e.target.value)}
-              className="bg-white dark:bg-black text-primary focus-visible:ring-blue-300/0 dark:focus-visible:border-blue-300/70"
+              className="bg-white text-primary focus-visible:ring-blue-300/0"
             />
           </motion.div>
         ))}

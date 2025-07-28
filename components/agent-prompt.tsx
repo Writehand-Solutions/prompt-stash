@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   CalendarClock,
   Lock,
@@ -8,6 +8,8 @@ import {
   Save,
   Trash,
   UnlockKeyhole,
+  Check,
+  X,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -15,11 +17,14 @@ import { Prompt, PromptStructure } from "@/lib/data/default-prompts"
 import { useCopyToClipboard } from "@/lib/hooks/use-copy-to-clipboard"
 import { usePromptString } from "@/lib/hooks/use-prompt-variables"
 import { usePrompts } from "@/lib/hooks/use-prompts"
+import { useCurrentUser } from "@/lib/hooks/use-current-user"
 import { formatRelativeTime } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 
 import { PromptUsageExampleComponent } from "./agent-prompt-usage-example"
 import { AgentPromptVariables } from "./agent-prompt-variables"
@@ -42,11 +47,23 @@ interface PromptDisplayProps {
 export function AgentPromptEditor({ prompt }: PromptDisplayProps) {
   const { isCopied, copyToClipboard } = useCopyToClipboard({ timeout: 2000 })
   const { setPromptString, promptString } = usePromptString(prompt)
-  const { saveDraftPrompt, deletePrompt, saveDraftAsFinalPrompt, toggleLock } =
+  const { saveDraftPrompt, deletePrompt, saveDraftAsFinalPrompt, toggleLock, editPrompt } =
     usePrompts()
+  const { currentUser } = useCurrentUser()
+
+  // Check if current user is the creator of the prompt
+  const isCreator = prompt?.creator === currentUser || prompt?.creator === "system"
+
+  // State for inline editing
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [isEditingDescription, setIsEditingDescription] = useState(false)
+  const [editTitle, setEditTitle] = useState("")
+  const [editDescription, setEditDescription] = useState("")
 
   useEffect(() => {
     setPromptString(prompt?.template || "")
+    setEditTitle(prompt?.title || "")
+    setEditDescription(prompt?.description || "")
   }, [prompt, setPromptString])
 
   const computedInputVariables = useMemo(() => {
@@ -98,6 +115,32 @@ export function AgentPromptEditor({ prompt }: PromptDisplayProps) {
     copyToClipboard(prompt.template)
   }
 
+  const handleTitleEdit = () => {
+    if (prompt?.id) {
+      editPrompt(prompt.id, { title: editTitle })
+      setIsEditingTitle(false)
+      toast.success("Title updated successfully")
+    }
+  }
+
+  const handleDescriptionEdit = () => {
+    if (prompt?.id) {
+      editPrompt(prompt.id, { description: editDescription })
+      setIsEditingDescription(false)
+      toast.success("Description updated successfully")
+    }
+  }
+
+  const cancelTitleEdit = () => {
+    setEditTitle(prompt?.title || "")
+    setIsEditingTitle(false)
+  }
+
+  const cancelDescriptionEdit = () => {
+    setEditDescription(prompt?.description || "")
+    setIsEditingDescription(false)
+  }
+
   const highlightVariables = useCallback((code: string) => {
     const highlightedCode = code.replace(
       /\{(\w+)\}/g,
@@ -107,26 +150,113 @@ export function AgentPromptEditor({ prompt }: PromptDisplayProps) {
   }, [])
 
   return (
-    <div className="flex-1 overflow-y-auto bg-white dark:bg-black ">
+    <div className="flex-1 overflow-y-auto bg-white">
       <div className="flex h-full flex-col">
         {prompt ? (
           <div className="flex flex-1 flex-col">
             <div className="flex items-start p-4">
               <div className="flex items-start gap-4 text-sm">
-                <div className="p-2 rounded-full dark:bg-neutral-800 bg-neutral-100">
+                <div className="p-2 rounded-full bg-neutral-100">
                   <Pencil className="h-5 w-5 stroke-primary fill-primary/30" />
                 </div>
                 <div className="grid gap-1">
-                  <div className="font-semibold">{prompt.title}</div>
-                  <div className="line-clamp-3 text-xs max-w-md">
-                    {prompt.description}
+                  {/* Title with inline editing */}
+                  <div className="flex items-center gap-2">
+                    {isEditingTitle ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          className="h-8 text-sm font-semibold"
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleTitleEdit}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Check className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={cancelTitleEdit}
+                          className="h-6 w-6 p-0"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 group">
+                        <div className="font-semibold text-gray-700">{prompt.title}</div>
+                        <div className={`transition-opacity ${isCreator ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'}`}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setIsEditingTitle(true)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Description with inline editing */}
+                  <div className="flex items-start gap-2">
+                    {isEditingDescription ? (
+                      <div className="flex items-start gap-2 w-full">
+                        <Textarea
+                          value={editDescription}
+                          onChange={(e) => setEditDescription(e.target.value)}
+                          className="h-16 text-xs resize-none"
+                          autoFocus
+                        />
+                        <div className="flex flex-col gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={handleDescriptionEdit}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Check className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={cancelDescriptionEdit}
+                            className="h-6 w-6 p-0"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2 w-full group">
+                        <div className="line-clamp-3 text-xs max-w-md text-gray-600">
+                          {prompt.description}
+                        </div>
+                        <div className={`transition-opacity flex-shrink-0 ${isCreator ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'}`}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setIsEditingDescription(true)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex gap-4">
-                    <div className="line-clamp-1 text-xs flex gap-2 items-center">
+                    <div className="line-clamp-1 text-xs flex gap-2 items-center text-gray-500">
                       <IconOpenAI />
                     </div>
-                    <div className="line-clamp-1 text-xs flex gap-2 items-center">
+                    <div className="line-clamp-1 text-xs flex gap-2 items-center text-gray-500">
                       <CalendarClock className="size-4" />
                       {formatRelativeTime(
                         prompt?.updated_at || prompt.created_at
@@ -224,10 +354,10 @@ export function AgentPromptEditor({ prompt }: PromptDisplayProps) {
                       onClick={handleDelete}
                       size="sm"
                       variant="ghost"
-                      className="dark:hover:bg-neutral-800 hover:bg-neutral-200  group"
+                      className="hover:bg-neutral-200 group"
                       disabled={prompt?.locked}
                     >
-                      <Trash className="h-4 w-4 group-hover:stroke-red-800 group-hover:fill-red-400 dark:group-hover:stroke-red-200 dark:group-hover:fill-red-500" />
+                      <Trash className="h-4 w-4 group-hover:stroke-red-800 group-hover:fill-red-400" />
                     </Button>
                     <Button
                       onClick={handleSave}

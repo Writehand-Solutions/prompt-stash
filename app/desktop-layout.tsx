@@ -73,7 +73,7 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
             }}
             className={cn(
               isCollapsed &&
-                "min-w-[60px] transition-all bg-neutral-100 dark:bg-black  duration-300 ease-in-out"
+                "min-w-[60px] transition-all bg-neutral-100 duration-300 ease-in-out"
             )}
           >
             <CreateNewPromptDrawer isCollapsed={isCollapsed} />

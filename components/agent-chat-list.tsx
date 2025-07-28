@@ -37,7 +37,7 @@ export function ChatList({ messages, className }: Props) {
 
                         message.role === "user"
                           ? "bg-card text-card-foreground ring-primary/10"
-                          : "bg-muted dark:bg-black  mr-8"
+                          : "bg-muted mr-8"
                       )}
                     >
                       {message.display}

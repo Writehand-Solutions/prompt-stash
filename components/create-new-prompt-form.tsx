@@ -12,6 +12,7 @@ import { z } from "zod"
 import { PromptStructure } from "@/lib/data/default-prompts"
 import { useSettings } from "@/lib/hooks/use-api-key"
 import { usePrompts } from "@/lib/hooks/use-prompts"
+import { useCurrentUser } from "@/lib/hooks/use-current-user"
 import { nanoid } from "@/lib/utils"
 
 import {
@@ -60,6 +61,7 @@ export function NewPromptForm() {
   const [isVariablesModalOpen, setIsVariablesModalOpen] = useState(false)
   const { settings } = useSettings()
   const { createPrompt } = usePrompts()
+  const { currentUser } = useCurrentUser()
 
   const form = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
@@ -80,6 +82,7 @@ export function NewPromptForm() {
       bookmarked: false,
       input_variables: [],
       locked: false,
+      creator: currentUser,
     }
 
     try {
