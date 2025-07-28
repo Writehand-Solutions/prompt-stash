@@ -18,12 +18,10 @@ import {
   TextureCardContent,
   TextureCardFooter,
 } from "@/components/cult/texture-card"
-import { EmptyScreen } from "@/components/empty-screen"
-import { SelectedActionsDisplay } from "@/components/selected-action-display"
-
 import { ChatList } from "./agent-chat-list"
 import { AgentChatUserMessageForm } from "./agent-chat-user-message-form"
-import { AgentChatVariableHeader } from "./agent-chat-variable-header"
+import { AgentChatForm } from "./agent-chat-form"
+import { SelectedActionsDisplay } from "./selected-action-display"
 
 // Define the type for action keys based on the actionsRegistry
 // This allows for type-safe access to actions throughout the component
@@ -58,10 +56,10 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
     variableValues: {},
     inputValue: prompt?.template ?? "",
     showActionsMenu: false,
-    aiActionsEnabled: true,
     actionsSearch: "",
     selectedActions: [],
     selectedIndex: 0,
+    aiActionsEnabled: true,
   })
 
   // Use AI-specific hooks for managing messages and AI state
@@ -212,7 +210,7 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
       {/* Scrollable area for chat messages */}
       <ScrollArea className="flex-grow overflow-y-auto">
         <div className="p-4 pb-24" role="log" aria-live="polite">
-          {messages.length ? <ChatList messages={messages} /> : <EmptyScreen />}
+          {messages.length ? <ChatList messages={messages} /> : null}
           <div className="w-full h-px" />
         </div>
       </ScrollArea>
@@ -224,13 +222,12 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
         <div className="mx-auto    px-1 sm:px-4 ">
           <TextureCard>
             <div className="flex flex-col space-y-4">
-              {/* Variable header for displaying and editing chat variables */}
-              <AgentChatVariableHeader
-                messages={messages}
+              {/* Form section replacing variables */}
+              <AgentChatForm
                 variables={variables}
-                inputValue={chatState.inputValue}
                 variableValues={chatState.variableValues}
                 handleVariableChange={handleVariableChange}
+                inputValue={chatState.inputValue}
               />
 
               <TextureCardContent className="px-4">
