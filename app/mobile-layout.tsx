@@ -72,7 +72,7 @@ export function MobileLayout() {
               </DrawerTrigger>
               <DrawerContent className="bg-white flex flex-col fixed bottom-0 left-0 right-0 max-h-[96%] rounded-t-[10px]">
                 <DrawerHeader className=" self-start w-full  md:pl-64">
-                  <DrawerTitle>Create new prompt</DrawerTitle>
+                  <DrawerTitle>Add new prompt</DrawerTitle>
                 </DrawerHeader>
 
                 <div className="w-full mx-auto flex flex-col overflow-auto p-4 rounded-t-[10px]">

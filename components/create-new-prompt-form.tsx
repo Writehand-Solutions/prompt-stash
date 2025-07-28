@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import { generatePromptWithAI } from "@/ai/generate-prompt-action"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader, SparklesIcon } from "lucide-react"
+import { Loader, SparklesIcon, Plus } from "lucide-react"
 import { useForm } from "react-hook-form"
 import TextArea from "react-textarea-autosize"
 import { toast } from "sonner"
@@ -18,6 +18,7 @@ import {
   CreateNewPromptGenerateDialog,
   PromptType,
 } from "./create-new-prompt-generate"
+import { AddVariablesModal } from "./add-variables-modal"
 import { Button } from "./ui/button"
 import {
   Card,
@@ -56,6 +57,7 @@ type FormSchema = z.infer<typeof formSchema>
 export function NewPromptForm() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isVariablesModalOpen, setIsVariablesModalOpen] = useState(false)
   const { settings } = useSettings()
   const { createPrompt } = usePrompts()
 
@@ -117,8 +119,21 @@ export function NewPromptForm() {
     }
   }
 
+  const handleVariablesGenerated = (variables: Array<{ name: string; description: string; type: string }>) => {
+    const currentTemplate = form.getValues("template") || ""
+    const variablePlaceholders = variables.map(v => `{${v.name}}`).join(" ")
+    
+    // Add variables to the template if it's empty, otherwise append them
+    const newTemplate = currentTemplate 
+      ? `${currentTemplate}\n\nVariables: ${variablePlaceholders}`
+      : `Use the following variables in your response:\n${variablePlaceholders}`
+    
+    form.setValue("template", newTemplate)
+    toast.success(`${variables.length} variables added to your prompt`)
+  }
+
   return (
-    <Card className="w-full max-w-3xl mx-auto rounded-2xl">
+    <Card className="w-full max-w-3xl mx-auto h-[1000px] rounded-2xl">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex flex-col">
@@ -148,10 +163,10 @@ export function NewPromptForm() {
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pb-8">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <ScrollArea className="h-[600px] pr-4 ">
+            <ScrollArea className="h-[800px] pr-4 ">
               <div className="space-y-6 px-2">
                 <FormField
                   control={form.control}
@@ -204,6 +219,17 @@ export function NewPromptForm() {
                           {...field}
                         />
                       </FormControl>
+                      <div className="mt-3">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => setIsVariablesModalOpen(true)}
+                          className="w-full sm:w-auto"
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add form input variables
+                        </Button>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -242,19 +268,27 @@ export function NewPromptForm() {
             </ScrollArea>
           </form>
         </Form>
-        <Button
-          type="submit"
-          onClick={form.handleSubmit(onSubmit)}
-          className="w-full"
-        >
-          Create Prompt
-        </Button>
+        <div className="pt-4">
+          <Button
+            type="submit"
+            onClick={form.handleSubmit(onSubmit)}
+            className="w-full"
+          >
+            Create Prompt
+          </Button>
+        </div>
       </CardContent>
 
       <CreateNewPromptGenerateDialog
         isOpen={isModalOpen}
         onOpenChange={setIsModalOpen}
         onGenerate={handleGeneratePrompt}
+      />
+
+      <AddVariablesModal
+        isOpen={isVariablesModalOpen}
+        onOpenChange={setIsVariablesModalOpen}
+        onVariablesGenerated={handleVariablesGenerated}
       />
     </Card>
   )

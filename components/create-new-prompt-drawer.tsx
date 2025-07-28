@@ -49,7 +49,7 @@ export function CreateNewPromptDrawer({
         <DrawerContent className="bg-white dark:bg-background flex flex-col fixed bottom-0 left-0 right-0 max-h-[96%] rounded-t-[10px]">
           <DrawerHeader className="self-start w-full mx-auto">
             <DrawerTitle className="text-center text-xl font-black  pb-3 bg-clip-text text-transparent bg-gradient-to-t from-stone-900/80 to-stone-950/90 dark:from-stone-100/80 dark:to-stone-50/90">
-              Add new prompt to your stash
+              Add new prompt
             </DrawerTitle>
           </DrawerHeader>
 
