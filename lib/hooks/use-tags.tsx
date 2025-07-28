@@ -57,6 +57,13 @@ const allTagsAtom = atom(async (get) => {
   return tags
 })
 
+// New atom for managing tags visibility
+const showTagsAtom = atom(false)
+
 export function useAllTags() {
   return useAtom(allTagsAtom)
+}
+
+export function useShowTags() {
+  return useAtom(showTagsAtom)
 }

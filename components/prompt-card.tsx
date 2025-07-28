@@ -20,8 +20,10 @@ import TextureCard, {
 
 export function PromptCard({
   prompt: originalPrompt,
+  showTags = true,
 }: {
   prompt: PromptStructure
+  showTags?: boolean
 }) {
   const [prompt, setPrompt] = usePrompt()
 
@@ -36,20 +38,22 @@ export function PromptCard({
       >
         <TextureCardHeader className="mr-3 ml-4 space-y-4">
           {/* Tags */}
-          <div className="mb-2 -ml-[9px]">
-            <div className="flex flex-wrap gap-2 -mt-[17px]">
-              {originalPrompt.tags &&
-                originalPrompt?.tags.map((tag) => (
-                  <Badge
-                    variant="outline"
-                    key={tag}
-                    className="text-xs rounded-[5px] first-of-type:rounded-tl-[9px] last-of-type:rounded-br-[9px] text-muted-foreground font-light"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
+          {showTags && (
+            <div className="mb-2 -ml-[9px]">
+              <div className="flex flex-wrap gap-2 -mt-[17px]">
+                {originalPrompt.tags &&
+                  originalPrompt?.tags.map((tag) => (
+                    <Badge
+                      variant="outline"
+                      key={tag}
+                      className="text-xs rounded-[5px] first-of-type:rounded-tl-[9px] last-of-type:rounded-br-[9px] text-muted-foreground font-light"
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Title */}
           <GradientHeading size="sm" className="text-left " weight="semi">
@@ -188,9 +192,11 @@ function BookmarkButton({
 export function MobilePromptCard({
   prompt: originalPrompt,
   setTab,
+  showTags = true,
 }: {
   setTab: (string) => void
   prompt: PromptStructure
+  showTags?: boolean
 }) {
   const [prompt, setPrompt] = usePrompt()
 
@@ -199,18 +205,20 @@ export function MobilePromptCard({
       <TextureCard className="relative px-0">
         <TextureCardHeader className="mr-4  pb-8 pt-2 first:pt-2 pl-2">
           <div className="flex flex-col mb-2 pb-2">
-            <div className="flex flex-wrap gap-1 mr-3">
-              {originalPrompt.tags &&
-                originalPrompt?.tags.map((tag) => (
-                  <Badge
-                    variant="outline"
-                    key={tag}
-                    className="text-[10px] rounded-sm first-of-type:rounded-tl-lg"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-            </div>
+            {showTags && (
+              <div className="flex flex-wrap gap-1 mr-3">
+                {originalPrompt.tags &&
+                  originalPrompt?.tags.map((tag) => (
+                    <Badge
+                      variant="outline"
+                      key={tag}
+                      className="text-[10px] rounded-sm first-of-type:rounded-tl-lg"
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+              </div>
+            )}
           </div>
           <TextureCardTitle className="text-xl">
             {originalPrompt.title}

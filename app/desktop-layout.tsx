@@ -2,11 +2,12 @@
 
 import { useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { Bookmark, Edit, MessageCircleCode, Search } from "lucide-react"
+import { Bookmark, Edit, MessageCircleCode, Search, Tag } from "lucide-react"
 
 import { PromptStructure } from "@/lib/data/default-prompts"
-import { useFilters, useSearchQuery } from "@/lib/hooks/use-prompt-filters"
+import { useFilters, useSearchQuery, filterPrompts } from "@/lib/hooks/use-prompt-filters"
 import { usePrompt, usePrompts } from "@/lib/hooks/use-prompts"
+
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
 import {
@@ -24,10 +25,7 @@ import { AgentPromptEditor } from "../components/agent-prompt"
 import ApiKeyInputModal from "../components/api-key-input-modal"
 import { CreateNewPromptDrawer } from "../components/create-new-prompt-drawer"
 import { PromptCard } from "../components/prompt-card"
-import {
-  filterPrompts,
-  PromptFilterListSidebar,
-} from "../components/prompt-filter-sidebar"
+
 import { ModeToggle } from "../components/theme-provider"
 
 interface PromptLibraryProps {
@@ -78,7 +76,6 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
           >
             <CreateNewPromptDrawer isCollapsed={isCollapsed} />
             <Separator />
-            <PromptFilterListSidebar isCollapsed={isCollapsed} />
 
             {/* User Settings */}
             <div className="absolute bottom-6 left-3">
@@ -96,10 +93,13 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
             <Tabs defaultValue="all">
               <div className="flex items-center  justify-between px-4 py-2">
                 <h2 className="font-semibold">Prompts</h2>
-                <TabsList className="grid w-full grid-cols-2  max-w-[100px]">
+                <TabsList className="grid w-full grid-cols-3  max-w-[150px]">
                   <TabsTrigger value="all">All</TabsTrigger>
                   <TabsTrigger value="bookmarked">
                     <Bookmark className="size-4" />
+                  </TabsTrigger>
+                  <TabsTrigger value="tags">
+                    <Tag className="size-4" />
                   </TabsTrigger>
                 </TabsList>
               </div>
@@ -156,7 +156,7 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
                           className="relative z-[1000] flex flex-col justify-end "
                         >
                           <div className="py-2 px-1">
-                            <PromptCard prompt={prompt} />
+                            <PromptCard prompt={prompt} showTags={false} />
                           </div>
                         </motion.div>
                       ))}
@@ -170,8 +170,52 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
                 <ScrollArea className="h-[calc(100vh-129px)] ">
                   <div className="flex flex-col gap-3 pb-48 pt-4 p-4 ">
                     {bookmarkedPrompts.map((prompt, index) => (
-                      <PromptCard key={index} prompt={prompt} />
+                      <PromptCard key={index} prompt={prompt} showTags={false} />
                     ))}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              {/* Tags Prompts */}
+              <TabsContent value="tags" className="m-0">
+                <ScrollArea className="h-[calc(100vh-129px)] z-20 bg-background/95">
+                  <div className=" m-3 ">
+                    <AnimatePresence initial={false}>
+                      {filteredPrompts.map((prompt, index) => (
+                        <motion.div
+                          initial={{ height: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{
+                            height: 0,
+                            y:
+                              -53 *
+                              countSelectedPromptsAfter(
+                                prompts,
+                                filteredPrompts,
+                                prompt
+                              ),
+
+                            zIndex: groupSelectedPrompts(
+                              prompts,
+                              filteredPrompts
+                            )
+                              .reverse()
+                              .findIndex((group) => group.includes(prompt)),
+                          }}
+                          transition={{
+                            ease: [0.32, 0.72, 0, 1],
+                            duration: 0.2,
+                          }}
+                          style={{ overflow: "hidden", zIndex: 1000 }}
+                          key={`${prompt.id}`}
+                          className="relative z-[1000] flex flex-col justify-end "
+                        >
+                          <div className="py-2 px-1">
+                            <PromptCard prompt={prompt} showTags={true} />
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 </ScrollArea>
               </TabsContent>
