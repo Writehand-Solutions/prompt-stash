@@ -2,13 +2,14 @@
 
 import { useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { Bookmark, Edit, MessageCircleCode, Search, Tag } from "lucide-react"
+import { Bookmark, Edit, MessageCircleCode, Search, Tag, LogOut } from "lucide-react"
 
 import { PromptStructure } from "@/lib/data/default-prompts"
 import { useFilters, useSearchQuery, filterPrompts } from "@/lib/hooks/use-prompt-filters"
 import { usePrompt, usePrompts } from "@/lib/hooks/use-prompts"
 
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
   ResizableHandle,
@@ -27,6 +28,7 @@ import { CreateNewPromptDrawer } from "../components/create-new-prompt-drawer"
 import { PromptCard } from "../components/prompt-card"
 
 import { ModeToggle } from "../components/theme-provider"
+import { useAuth } from "@/lib/hooks/use-auth"
 
 interface PromptLibraryProps {
   defaultCollapsed?: boolean
@@ -38,6 +40,7 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
   navCollapsedSize,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
+  const { logout } = useAuth()
 
   // Global State
   const [prompt] = usePrompt()
@@ -82,6 +85,15 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
               <div className={cn("flex gap-2", isCollapsed ? "flex-col " : "")}>
                 <ModeToggle />
                 <ApiKeyInputModal />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={logout}
+                  className="border border-black/10 dark:border-white/10 group"
+                  aria-label="Logout"
+                >
+                  <LogOut className="h-[1.2rem] w-[1.2rem] group-hover:rotate-6 transition-all" />
+                </Button>
               </div>
             </div>
           </ResizablePanel>

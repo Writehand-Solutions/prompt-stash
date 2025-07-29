@@ -8,11 +8,13 @@ import {
   Search,
   Tag,
   X,
+  LogOut,
 } from "lucide-react"
 
 import { PromptStructure } from "@/lib/data/default-prompts"
 import { useFilters } from "@/lib/hooks/use-prompt-filters"
 import { usePrompt, usePrompts } from "@/lib/hooks/use-prompts"
+import { useAuth } from "@/lib/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -25,6 +27,7 @@ import { MobilePromptCard } from "@/components/prompt-card"
 
 export function MobileLayout() {
   const [tab, setTab] = useState("prompts")
+  const { logout } = useAuth()
 
   // Global state
   const [prompt] = usePrompt()
@@ -73,10 +76,11 @@ export function MobileLayout() {
               <Button
                 variant="ghost"
                 size="icon"
+                onClick={logout}
                 className="md:hidden hover:bg-transparent"
               >
-                <X className="size-4" />
-                <span className="sr-only">Close</span>
+                <LogOut className="size-4" />
+                <span className="sr-only">Logout</span>
               </Button>
             </div>
           </header>

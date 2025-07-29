@@ -2,8 +2,9 @@
 
 import { atom, useAtom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
+import { useEffect } from "react"
 
-import { secretKey, xorEncrypt } from "../utils"
+import { secretKey, xorEncrypt, xorDecrypt } from "../utils"
 
 // Define the settings state using Jotai atomWithStorage
 const settingsAtom = atomWithStorage("settings", {
@@ -23,9 +24,28 @@ export const useSettings = () => {
     }))
   }
 
+  // Function to get the decrypted API key
+  const getDecryptedApiKey = () => {
+    if (!settings.USER_OPEN_AI_API_KEY) return ""
+    try {
+      return xorDecrypt(settings.USER_OPEN_AI_API_KEY, secretKey)
+    } catch (error) {
+      console.error("Failed to decrypt API key:", error)
+      return ""
+    }
+  }
+
+  // Function to check if API key exists
+  const hasApiKey = () => {
+    const decryptedKey = getDecryptedApiKey()
+    return decryptedKey.length > 0
+  }
+
   return {
     settings,
     setUserOpenAIApiKey,
+    getDecryptedApiKey,
+    hasApiKey,
   }
 }
 
