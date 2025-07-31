@@ -26,10 +26,9 @@ import { atomWithStorage } from "jotai/utils"
 import { z } from "zod"
 
 import {
-  prompts as defaultPrompts,
   PromptStructure,
   promptStructureSchema,
-} from "@/lib/data/default-prompts"
+} from "@/lib/data/validator"
 
 // Type definitions for the configuration
 type Config = {
@@ -196,7 +195,9 @@ export const usePrompts = () => {
 
       if (config.shouldLoadDefaults && prompts.length === 0) {
         console.log("Loading default prompts")
-        setPrompts(defaultPrompts)
+        fetch("/api/prompts")
+        .then((res) => res.json())
+        .then(setPrompts)
         setConfig({
           ...config,
           isInitialized: true,
@@ -373,7 +374,9 @@ export const usePrompts = () => {
 
   // Function to restore default prompts
   const restoreDefaultPrompts = useCallback(() => {
-    setPrompts(defaultPrompts)
+     fetch("/api/prompts")
+    .then((res) => res.json())
+    .then(setPrompts)
     setDraftPrompts({})
     setConfig({
       ...config,

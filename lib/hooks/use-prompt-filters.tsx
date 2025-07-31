@@ -3,7 +3,7 @@
 import { atom, useAtom } from "jotai"
 import { atomWithStorage } from "jotai/utils"
 
-import { prompts, PromptStructure } from "@/lib/data/default-prompts"
+import {  PromptStructure } from "@/lib/data/validator"
 
 export interface Filters {
   useCases: string[]
@@ -28,20 +28,20 @@ export function useSearchQuery() {
   return useAtom(searchQueryAtom)
 }
 
-export const promptsAtom = atomWithStorage<PromptStructure[]>(
-  "prompts",
-  prompts,
-  undefined,
-  { getOnInit: true }
-)
+// export const promptsAtom = atomWithStorage<PromptStructure[]>(
+//   "prompts",
+//   prompts,
+//   undefined,
+//   { getOnInit: true }
+// )
 
-export const filteredPromptsAtom = atom(async (get) => {
-  const prompts = await get(promptsAtom)
-  const searchQuery = get(searchQueryAtom)
-  const filters = get(filtersAtom)
+// export const filteredPromptsAtom = atom(async (get) => {
+//   const prompts = await get(promptsAtom)
+//   const searchQuery = get(searchQueryAtom)
+//   const filters = get(filtersAtom)
 
-  return filterPrompts(prompts, filters, searchQuery)
-})
+//   return filterPrompts(prompts, filters, searchQuery)
+// })
 
 export function filterPrompts(
   prompts: PromptStructure[],

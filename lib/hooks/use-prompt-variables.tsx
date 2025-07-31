@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 
-import { Prompt } from "../data/default-prompts"
+import { Prompt } from "../data/validator"
 
 export function usePromptString(prompt: Prompt | null) {
   const [promptString, setPromptString] = useState(prompt?.template || "")
