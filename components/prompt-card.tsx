@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion"
 import { ArrowRight, Bookmark, Sparkles } from "lucide-react"
 
-import { PromptStructure } from "@/lib/data/default-prompts"
+import { PromptStructure } from "@/lib/data/validator"
 import { usePrompt, usePrompts } from "@/lib/hooks/use-prompts"
 import { cn, formatRelativeTime } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"

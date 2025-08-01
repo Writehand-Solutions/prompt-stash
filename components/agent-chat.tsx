@@ -6,7 +6,7 @@ import { actionsRegistry } from "@/ai/registry"
 import { ClientMessage } from "@/ai/types"
 import { useActions, useAIState, useUIState } from "ai/rsc"
 
-import { PromptStructure } from "@/lib/data/default-prompts"
+import { PromptStructure } from "@/lib/data/validator"
 import { useEnterSubmit } from "@/lib/hooks/use-enter-submit"
 import { usePromptString } from "@/lib/hooks/use-prompt-variables"
 import { nanoid } from "@/lib/utils"

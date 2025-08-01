@@ -11,7 +11,7 @@ import {
   LogOut,
 } from "lucide-react"
 
-import { PromptStructure } from "@/lib/data/default-prompts"
+import { PromptStructure } from "@/lib/data/validator"
 import { useFilters } from "@/lib/hooks/use-prompt-filters"
 import { usePrompt, usePrompts } from "@/lib/hooks/use-prompts"
 import { useAuth } from "@/lib/hooks/use-auth"
