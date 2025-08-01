@@ -1,58 +1,119 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { AnimatePresence, motion } from "framer-motion"
-import { Bookmark, Edit, MessageCircleCode, Search, Tag, LogOut } from "lucide-react"
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Bookmark,
+  Edit,
+  MessageCircleCode,
+  Search,
+  Tag,
+  LogOut,
+  InfoIcon,
+} from "lucide-react";
 
-import { PromptStructure } from "@/lib/data/validator"
-import { useFilters, useSearchQuery, filterPrompts } from "@/lib/hooks/use-prompt-filters"
-import { usePrompt, usePrompts } from "@/lib/hooks/use-prompts"
+import { PromptStructure } from "@/lib/data/validator";
+import {
+  useFilters,
+  useSearchQuery,
+  filterPrompts,
+} from "@/lib/hooks/use-prompt-filters";
+import { usePrompt, usePrompts } from "@/lib/hooks/use-prompts";
 
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@/components/ui/resizable"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TooltipProvider } from "@/components/ui/tooltip"
+} from "@/components/ui/resizable";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
-import Chat from "../components/agent-chat"
-import { AgentPromptEditor } from "../components/agent-prompt"
-import ApiKeyInputModal from "../components/api-key-input-modal"
-import { CreateNewPromptDrawer } from "../components/create-new-prompt-drawer"
-import { PromptCard } from "../components/prompt-card"
+import Chat from "../components/agent-chat";
+import { AgentPromptEditor } from "../components/agent-prompt";
+import ApiKeyInputModal from "../components/api-key-input-modal";
+import { CreateNewPromptDrawer } from "../components/create-new-prompt-drawer";
+import { PromptCard } from "../components/prompt-card";
 
-import { ModeToggle } from "../components/theme-provider"
-import { useAuth } from "@/lib/hooks/use-auth"
-
+import { ModeToggle } from "../components/theme-provider";
+import { useAuth } from "@/lib/hooks/use-auth";
+import { IntroDisclosure } from "@/components/ui/intro-disclosure";
+import { toast } from "sonner";
 interface PromptLibraryProps {
-  defaultCollapsed?: boolean
-  navCollapsedSize?: number
+  defaultCollapsed?: boolean;
+  navCollapsedSize?: number;
 }
-
+const steps = [
+  {
+    title: "Welcome to Cult UI",
+    short_description: "Discover our modern component library",
+    full_description:
+      "Welcome to Cult UI! Let's explore how our beautifully crafted components can help you build stunning user interfaces with ease.",
+    media: {
+      type: "image" as const,
+      src: "/feature-3.webp",
+      alt: "Cult UI components overview",
+    },
+  },
+  {
+    title: "Customizable Components",
+    short_description: "Style and adapt to your needs",
+    full_description:
+      "Every component is built with customization in mind. Use our powerful theming system with Tailwind CSS to match your brand perfectly.",
+    media: {
+      type: "image" as const,
+      src: "/feature-2.webp",
+      alt: "Component customization interface",
+    },
+    action: {
+      label: "View Theme Builder",
+      href: "/docs/theming",
+    },
+  },
+  {
+    title: "Responsive & Accessible",
+    short_description: "Built for everyone",
+    full_description:
+      "All components are fully responsive and follow WAI-ARIA guidelines, ensuring your application works seamlessly across all devices and is accessible to everyone.",
+    media: {
+      type: "image" as const,
+      src: "/feature-1.webp",
+      alt: "Responsive design demonstration",
+    },
+  },
+  {
+    title: "Start Building",
+    short_description: "Create your next project",
+    full_description:
+      "You're ready to start building! Check out our comprehensive documentation and component examples to create your next amazing project.",
+    action: {
+      label: "View Components",
+      href: "/docs/components",
+    },
+  },
+];
 export const DesktopLayout: React.FC<PromptLibraryProps> = ({
   defaultCollapsed = false,
   navCollapsedSize,
 }) => {
- const isCollapsed = true
-  const { logout } = useAuth()
+  const isCollapsed = true;
+  const { logout } = useAuth();
 
   // Global State
-  const [prompt] = usePrompt()
-  const [filters] = useFilters()
-  const { prompts } = usePrompts()
-  const [searchQuery, setSearchQuery] = useSearchQuery()
-
-  const filteredPrompts = filterPrompts(prompts, filters, searchQuery)
-  const selectedPrompt = prompts.find((item) => item.id === prompt.selected)
+  const [prompt] = usePrompt();
+  const [filters] = useFilters();
+  const { prompts } = usePrompts();
+  const [searchQuery, setSearchQuery] = useSearchQuery();
+  const [open, setOpen] = useState(false);
+  const filteredPrompts = filterPrompts(prompts, filters, searchQuery);
+  const selectedPrompt = prompts.find((item) => item.id === prompt.selected);
   const bookmarkedPrompts = filteredPrompts.filter(
     (prompt) => prompt.bookmarked
-  )
+  );
 
   return (
     <div className="">
@@ -69,7 +130,6 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
             minSize={15}
             maxSize={20}
             className="min-w-[60px] max-w-[60px] bg-neutral-100 dark:bg-neutral-900 transition-all duration-300 ease-in-out"
-
           >
             <CreateNewPromptDrawer isCollapsed={isCollapsed} />
             <Separator />
@@ -77,8 +137,18 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
             {/* User Settings */}
             <div className="absolute bottom-6 left-3">
               <div className={cn("flex gap-2", isCollapsed ? "flex-col " : "")}>
+                 <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setOpen(true)}
+                  className="border border-black/10 dark:border-white/10 group"
+                  aria-label="Show Intro"
+                >
+                  <InfoIcon className="h-[1.2rem] w-[1.2rem] group-hover:scale-110 transition-all" />
+                </Button>
                 <ModeToggle />
                 <ApiKeyInputModal />
+               
                 <Button
                   variant="outline"
                   size="icon"
@@ -91,8 +161,6 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
               </div>
             </div>
           </ResizablePanel>
-
-          
 
           {/* Center Panel */}
           <ResizablePanel defaultSize={40} minSize={36} className="shadow-lg">
@@ -176,7 +244,11 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
                 <ScrollArea className="h-[calc(100vh-129px)] ">
                   <div className="flex flex-col gap-3 pb-48 pt-4 p-4 ">
                     {bookmarkedPrompts.map((prompt, index) => (
-                      <PromptCard key={index} prompt={prompt} showTags={false} />
+                      <PromptCard
+                        key={index}
+                        prompt={prompt}
+                        showTags={false}
+                      />
                     ))}
                   </div>
                 </ScrollArea>
@@ -228,8 +300,6 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
             </Tabs>
           </ResizablePanel>
 
-          
-
           <ResizablePanel defaultSize={45} minSize={42}>
             <Tabs defaultValue="test">
               <div className="flex items-center  justify-between px-4 py-2">
@@ -258,59 +328,68 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
             </Tabs>
           </ResizablePanel>
         </ResizablePanelGroup>
+        <IntroDisclosure
+          open={open}
+          setOpen={setOpen}
+          steps={steps}
+          featureId="intro-onboarding"
+          showProgressBar={true}
+          onComplete={() => toast.success("Tour completed")}
+          onSkip={() => toast.info("Tour skipped")}
+        />
       </TooltipProvider>
     </div>
-  )
-}
+  );
+};
 
 function countSelectedPromptsAfter(
   prompts: PromptStructure[],
   selectedPrompts: PromptStructure[],
   prompt: PromptStructure
 ) {
-  const startIndex = prompts.indexOf(prompt)
+  const startIndex = prompts.indexOf(prompt);
 
   if (startIndex === -1 || !selectedPrompts.includes(prompt)) {
-    return 0
+    return 0;
   }
 
-  let consecutiveCount = 0
+  let consecutiveCount = 0;
 
   for (let i = startIndex + 1; i < prompts.length; i++) {
     if (selectedPrompts.includes(prompt[i])) {
-      consecutiveCount++
+      consecutiveCount++;
     } else {
-      break
+      break;
     }
   }
 
-  return consecutiveCount
+  return consecutiveCount;
 }
 
 function groupSelectedPrompts(
   prompts: PromptStructure[],
   selectedPrompts: PromptStructure[]
 ) {
-  const todoGroups = []
-  let currentGroup = []
+  const todoGroups = [];
+  let currentGroup = [];
 
   for (let i = 0; i < prompts.length; i++) {
-    const todo = prompts[i]
+    const todo = prompts[i];
 
     if (selectedPrompts.includes(todo)) {
-      currentGroup.push(todo)
+      currentGroup.push(todo);
     } else if (currentGroup.length > 0) {
       // If we encounter a non-selected message and there is an active group,
       // push the current group to the result and reset it.
-      todoGroups.push(currentGroup)
-      currentGroup = []
+      todoGroups.push(currentGroup);
+      currentGroup = [];
     }
   }
 
   // Check if there's a group remaining after the loop.
   if (currentGroup.length > 0) {
-    todoGroups.push(currentGroup)
+    todoGroups.push(currentGroup);
   }
 
-  return todoGroups
+  return todoGroups;
 }

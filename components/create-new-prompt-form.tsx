@@ -9,7 +9,7 @@ import TextArea from "react-textarea-autosize"
 import { toast } from "sonner"
 import { z } from "zod"
 
-import { PromptStructure } from "@/lib/data/default-prompts"
+import { PromptStructure } from "@/lib/data/validator"
 import { useSettings } from "@/lib/hooks/use-api-key"
 import { usePrompts } from "@/lib/hooks/use-prompts"
 import { useCurrentUser } from "@/lib/hooks/use-current-user"
