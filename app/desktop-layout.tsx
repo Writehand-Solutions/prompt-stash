@@ -39,7 +39,7 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
   defaultCollapsed = false,
   navCollapsedSize,
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed)
+ const isCollapsed = true
   const { logout } = useAuth()
 
   // Global State
@@ -60,22 +60,16 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
         {/* LEFT PANEL */}
         <ResizablePanelGroup
           direction="horizontal"
-          className=" bg-neutral-50 dark:bg-neutral-950   items-stretch"
+          className="bg-neutral-100 dark:bg-neutral-900"
         >
           <ResizablePanel
-            defaultSize={15}
+            defaultSize={6}
             collapsedSize={navCollapsedSize}
             collapsible={true}
             minSize={15}
             maxSize={20}
-            onCollapse={(collapsed: any) => {
-              setIsCollapsed(collapsed)
-              document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(collapsed)}`
-            }}
-            className={cn(
-              isCollapsed &&
-                "min-w-[60px] transition-all bg-neutral-100 duration-300 ease-in-out"
-            )}
+            className="min-w-[60px] max-w-[60px] bg-neutral-100 dark:bg-neutral-900 transition-all duration-300 ease-in-out"
+
           >
             <CreateNewPromptDrawer isCollapsed={isCollapsed} />
             <Separator />
@@ -98,7 +92,7 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
             </div>
           </ResizablePanel>
 
-          <ResizableHandle withHandle />
+          
 
           {/* Center Panel */}
           <ResizablePanel defaultSize={40} minSize={36} className="shadow-lg">
@@ -234,7 +228,7 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
             </Tabs>
           </ResizablePanel>
 
-          <ResizableHandle withHandle />
+          
 
           <ResizablePanel defaultSize={45} minSize={42}>
             <Tabs defaultValue="test">
