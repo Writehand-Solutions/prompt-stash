@@ -45,7 +45,7 @@ export function LoginPage() {
         name: email.split('@')[0],
       })
       
-      toast.success("Welcome to Cult Prompt Stash!")
+      toast.success("Welcome to Productised Prompt Builder!")
     } catch (error) {
       toast.error("Failed to send magic link. Please try again.")
     } finally {
@@ -78,7 +78,7 @@ export function LoginPage() {
               transition={{ delay: 0.3, duration: 0.5 }}
               className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white"
             >
-              Welcome to Cult Prompt Stash
+              Welcome to Productised Prompt Builder
             </motion.h1>
             
             <motion.p
@@ -87,7 +87,7 @@ export function LoginPage() {
               transition={{ delay: 0.4, duration: 0.5 }}
               className="mt-2 text-sm text-gray-600 dark:text-gray-400"
             >
-              Sign in to your account to continue
+              Enter your email to get started.
             </motion.p>
           </TextureCardHeader>
 
@@ -126,11 +126,11 @@ export function LoginPage() {
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    <span>Sending magic link...</span>
+                    <span>Verifying email...</span>
                   </div>
                 ) : (
                   <div className="flex items-center space-x-2">
-                    <span>Continue with Magic Link</span>
+                    <span>Get Instant Access</span>
                     <ArrowRight className="h-4 w-4" />
                   </div>
                 )}
@@ -144,7 +144,7 @@ export function LoginPage() {
               className="mt-8 text-center"
             >
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                We'll send you a magic link to sign in securely
+                After entering your email, you will get immediate access, no password required.
               </p>
             </motion.div>
           </TextureCardContent>

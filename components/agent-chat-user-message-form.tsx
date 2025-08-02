@@ -25,6 +25,7 @@ export function AgentChatUserMessageForm({
   setShowActionsMenu,
   prompt,
   handleNewChat,
+  onSubmit
 }: {
   formRef: React.RefObject<HTMLFormElement>
   inputValue: string
@@ -39,6 +40,7 @@ export function AgentChatUserMessageForm({
   setShowActionsMenu: (show: boolean) => void
   handleNewChat?: any
   prompt?: { template: string }
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void
 }) {
   const { settings } = useSettings()
   const { toggleSettingsModal } = useSettingsModal()
@@ -59,57 +61,7 @@ export function AgentChatUserMessageForm({
     <form
       ref={formRef}
       className="w-full"
-      onSubmit={async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault()
-        // Blur the input on mobile devices to hide the keyboard
-        if (window.innerWidth < 600) {
-          ;(e.target as HTMLFormElement).message?.blur()
-        }
-
-        const value = renderInputValue().trim()
-        setInputValue("")
-        setVariableValues({})
-        if (!value) return
-
-        // Check for API key and prompt user if missing
-        if (!settings.USER_OPEN_AI_API_KEY) {
-          toast.error("Please enter your OpenAI API key in the settings.")
-          toggleSettingsModal()
-          return
-        }
-
-        // Add user message to the chat
-        setMessages((currentMessages) => [
-          ...currentMessages,
-          {
-            id: nanoid(),
-            role: "user",
-            display: <UserMessage>{value}</UserMessage>,
-          },
-        ])
-
-        try {
-          // Send message to the API
-          const response = await sendMessage(
-            value,
-            settings.USER_OPEN_AI_API_KEY,
-            selectedActions.length > 0 ? selectedActions : undefined
-          )
-          // Add API response to the chat
-          setMessages((currentMessages) => [...currentMessages, response])
-          setSelectedActions([])
-        } catch (error) {
-          console.error(error)
-          // Provide more specific error messages based on error type
-          if (error instanceof TypeError) {
-            toast.error("Network error. Please check your internet connection.")
-          } else if (error instanceof Response && error.status === 401) {
-            toast.error("Invalid API key. Please check your settings.")
-          } else {
-            toast.error("An unexpected error occurred. Please try again later.")
-          }
-        }
-      }}
+      onSubmit={onSubmit}
     >
       {/* Action Buttons */}
       <div className="relative flex flex-col w-full px-8 overflow-hidden max-h-60 grow  shadow-elevation-light dark:shadow-elevation-dark   md:mt-0 rounded-xl sm:px-12 ">

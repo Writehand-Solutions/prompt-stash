@@ -13,7 +13,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { Prompt, PromptStructure } from "@/lib/data/default-prompts"
+import { Prompt, PromptStructure } from "@/lib/data/validator"
 import { useCopyToClipboard } from "@/lib/hooks/use-copy-to-clipboard"
 import { usePromptString } from "@/lib/hooks/use-prompt-variables"
 import { usePrompts } from "@/lib/hooks/use-prompts"

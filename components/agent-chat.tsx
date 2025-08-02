@@ -6,7 +6,7 @@ import { actionsRegistry } from "@/ai/registry"
 import { ClientMessage } from "@/ai/types"
 import { useActions, useAIState, useUIState } from "ai/rsc"
 
-import { PromptStructure } from "@/lib/data/default-prompts"
+import { PromptStructure } from "@/lib/data/validator"
 import { useEnterSubmit } from "@/lib/hooks/use-enter-submit"
 import { usePromptString } from "@/lib/hooks/use-prompt-variables"
 import { nanoid } from "@/lib/utils"
@@ -18,10 +18,14 @@ import {
   TextureCardContent,
   TextureCardFooter,
 } from "@/components/cult/texture-card"
+
+import { UserMessage } from "./message"
 import { ChatList } from "./agent-chat-list"
 import { AgentChatUserMessageForm } from "./agent-chat-user-message-form"
 import { AgentChatForm } from "./agent-chat-form"
 import { SelectedActionsDisplay } from "./selected-action-display"
+import { toast } from "sonner"
+import { useSettings, useSettingsModal } from "@/lib/hooks/use-api-key"
 
 // Define the type for action keys based on the actionsRegistry
 // This allows for type-safe access to actions throughout the component
@@ -46,6 +50,8 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
   // This allows for dynamic prompts with variable placeholders
   const { variables } = usePromptString(prompt)
 
+  const { settings } = useSettings()
+    const { toggleSettingsModal } = useSettingsModal()
   // Custom hook for handling form submission on Enter key press
   // Improves user experience by allowing quick message sending
   const { formRef, onKeyDown: onEnterKeyDown } = useEnterSubmit()
@@ -202,20 +208,77 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
     setMessages([])
   }, [setAIState, setMessages])
 
+  const handleFormSubmit = useCallback(
+       async (e: React.FormEvent<HTMLFormElement>) => {
+              e.preventDefault()
+               console.log("Form submitted")
+              // Blur the input on mobile devices to hide the keyboard
+              if (window.innerWidth < 600) {
+                (e.target as HTMLFormElement).message?.blur()
+              }
+      
+              const value = renderInputValue().trim()
+              setChatState((prev) => ({ ...prev, inputValue: '' }))
+              setChatState((prev) => ({ ...prev, variableValues: {} }))
+              if (!value) return
+      
+              // Check for API key and prompt user if missing
+              if (!settings.USER_OPEN_AI_API_KEY) {
+                toast.error("Please enter your OpenAI API key in the settings.")
+                toggleSettingsModal()
+                return
+              }
+      
+              // Add user message to the chat
+              handleNewMessage([
+  ...messages,
+  {
+    id: nanoid(),
+    role: "user",
+    display: <UserMessage>{value}</UserMessage>,
+  },
+])
+
+              try {
+                // Send message to the API
+                const response = await sendMessage(
+                  value,
+                  settings.USER_OPEN_AI_API_KEY,
+                  chatState.selectedActions.length > 0 ? chatState.selectedActions : undefined
+                )
+                // Add API response to the chat
+                handleNewMessage([...messages, response])
+                setSelectedActions([])
+              } catch (error) {
+                console.error(error)
+                // Provide more specific error messages based on error type
+                if (error instanceof TypeError) {
+                  toast.error("Network error. Please check your internet connection.")
+                } else if (error instanceof Response && error.status === 401) {
+                  toast.error("Invalid API key. Please check your settings.")
+                } else {
+                  toast.error("An unexpected error occurred. Please try again later.")
+                }
+              }
+            },[renderInputValue, setMessages])
   return (
     <div
       className="relative flex flex-col w-full h-[calc(100vh-64px)] overflow-hidden"
       role="main"
     >
+      {messages.length ?
+      <>
       {/* Scrollable area for chat messages */}
       <ScrollArea className="flex-grow overflow-y-auto">
         <div className="p-4 pb-24" role="log" aria-live="polite">
-          {messages.length ? <ChatList messages={messages} /> : null}
+           <ChatList messages={messages} /> 
           <div className="w-full h-px" />
         </div>
       </ScrollArea>
 
       <Separator className="mt-auto" />
+      </>
+      : null}
 
       {/* Chat input area */}
       <div className="sticky bottom-0 left-0 right-0 w-full bg-background py-2 ">
@@ -228,6 +291,7 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
                 variableValues={chatState.variableValues}
                 handleVariableChange={handleVariableChange}
                 inputValue={chatState.inputValue}
+                onSubmit={handleFormSubmit} // Pass the form submit handler
               />
 
               <TextureCardContent className="px-4">
@@ -302,6 +366,7 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
                 setShowActionsMenu={(value) =>
                   setChatState((prev) => ({ ...prev, showActionsMenu: value }))
                 }
+                onSubmit={handleFormSubmit}
               />
             </TextureCardFooter>
           </TextureCard>

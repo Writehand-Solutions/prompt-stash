@@ -9,7 +9,7 @@ import TextArea from "react-textarea-autosize"
 import { toast } from "sonner"
 import { z } from "zod"
 
-import { PromptStructure } from "@/lib/data/default-prompts"
+import { PromptStructure } from "@/lib/data/validator"
 import { useSettings } from "@/lib/hooks/use-api-key"
 import { usePrompts } from "@/lib/hooks/use-prompts"
 import { useCurrentUser } from "@/lib/hooks/use-current-user"
@@ -74,8 +74,13 @@ export function NewPromptForm() {
   })
 
   async function onSubmit(data: FormSchema) {
+     const tagsArray = data.tags
+    ? data.tags.split(",").map((tag: string) => tag.trim()).filter(Boolean)
+    : [];
+
     const promptData: Partial<PromptStructure> = {
       ...data,
+      tags: tagsArray,
       id: nanoid(22),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -252,15 +257,6 @@ export function NewPromptForm() {
                         <Input
                           placeholder="Enter comma-separated tags"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(
-                              e.target.value
-                                .split(",")
-                                .map((tag) => tag.trim())
-                                .filter(Boolean)
-                            )
-                          }
-                          value={field.value ? field.value.join(", ") : ""}
                         />
                       </FormControl>
                       <FormMessage />
