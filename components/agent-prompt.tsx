@@ -1,385 +1,394 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { AI } from "@/ai/actions";
-import { actionsRegistry } from "@/ai/registry";
-import { ClientMessage } from "@/ai/types";
-import { useActions, useAIState, useUIState } from "ai/rsc";
-
-import { PromptStructure } from "@/lib/data/validator";
-import { useEnterSubmit } from "@/lib/hooks/use-enter-submit";
-import { usePromptString } from "@/lib/hooks/use-prompt-variables";
-import { nanoid } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { AgentChatActionsMenu } from "@/components/agent-chat-action-menu";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  TextureCard,
-  TextureCardContent,
-  TextureCardFooter,
-} from "@/components/cult/texture-card";
-
-import { UserMessage } from "./message";
-import { ChatList } from "./agent-chat-list";
-import { AgentChatUserMessageForm } from "./agent-chat-user-message-form";
-import { AgentChatForm } from "./agent-chat-form";
-import { SelectedActionsDisplay } from "./selected-action-display";
+  CalendarClock,
+  Lock,
+  Pencil,
+  Save,
+  Trash,
+  UnlockKeyhole,
+  Check,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
-import { useSettings, useSettingsModal } from "@/lib/hooks/use-api-key";
-import { EmptyScreen } from "./empty-screen";
 
-// Define the type for action keys based on the actionsRegistry
-// This allows for type-safe access to actions throughout the component
-type ActionKey = keyof typeof actionsRegistry;
+import { Prompt, PromptStructure } from "@/lib/data/validator";
+import { useCopyToClipboard } from "@/lib/hooks/use-copy-to-clipboard";
+import { usePromptString } from "@/lib/hooks/use-prompt-variables";
+import { usePrompts } from "@/lib/hooks/use-prompts";
+import { useCurrentUser } from "@/lib/hooks/use-current-user";
+import { formatRelativeTime } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
-// Interface for the chat state
-// This centralizes all the state variables related to the chat interface
-interface ChatState {
-  variableValues: Record<string, string>; // Stores values for variables in the prompt
-  inputValue: string; // Current value of the input field
-  showActionsMenu: boolean; // Controls visibility of the actions menu
-  actionsSearch: string; // Current search term in the actions menu
-  selectedActions: ActionKey[]; // List of currently selected actions
-  selectedIndex: number; // Index of the currently selected action in the menu
-  aiActionsEnabled: boolean;
+import { PromptUsageExampleComponent } from "./agent-prompt-usage-example";
+import { AgentPromptVariables } from "./agent-prompt-variables";
+import { FadeIn } from "./cult/fade-in";
+import { TextureCardPrimary } from "./cult/texture-card";
+import { CardContent, CardHeader, CardTitle } from "./ui/card";
+import { IconCheck, IconCopy, IconOpenAI } from "./ui/icons";
+import Editor from "./ui/prompt-editor";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+
+function extractVariablesFromPrompt(promptString: string): string[] {
+  const matches = promptString.match(/\{(\w+)\}/g) || [];
+  return [...new Set(matches.map((match) => match.slice(1, -1)))];
 }
 
-// Main Chat component
-// This component orchestrates the entire chat interface, managing state and user interactions
-export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
-  // Extract variables from the prompt using a custom hook
-  // This allows for dynamic prompts with variable placeholders
-  const { variables } = usePromptString(prompt);
+interface PromptDisplayProps {
+  prompt: Prompt | null;
+}
 
-  const { settings } = useSettings();
-  const { toggleSettingsModal } = useSettingsModal();
-  // Custom hook for handling form submission on Enter key press
-  // Improves user experience by allowing quick message sending
-  const { formRef, onKeyDown: onEnterKeyDown } = useEnterSubmit();
+export function AgentPromptEditor({ prompt }: PromptDisplayProps) {
+  const { isCopied, copyToClipboard } = useCopyToClipboard({ timeout: 2000 });
+  const { setPromptString, promptString } = usePromptString(prompt);
+  const {
+    saveDraftPrompt,
+    deletePrompt,
+    saveDraftAsFinalPrompt,
+    toggleLock,
+    editPrompt,
+  } = usePrompts();
+  const { currentUser } = useCurrentUser();
 
-  // State management
-  // Using a single state object for all chat-related-action state and variable state
-  const [chatState, setChatState] = useState<ChatState>({
-    variableValues: {},
-    inputValue: prompt?.template ?? "",
-    showActionsMenu: false,
-    actionsSearch: "",
-    selectedActions: [],
-    selectedIndex: 0,
-    aiActionsEnabled: true,
-  });
+  // Check if current user is the creator of the prompt
+  const isCreator =
+    prompt?.creator === currentUser || prompt?.creator === "system";
 
-  // Use AI-specific hooks for managing messages and AI state
-  // These hooks integrate with the AI system to handle message flow
-  const [messages, setMessages] = useUIState<typeof AI>() as [
-    ClientMessage[],
-    (messages: ClientMessage[]) => void,
-  ];
-  const [_, setAIState] = useAIState<typeof AI>();
+  // State for inline editing
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
-  // Refs for accessing DOM elements
-  // These allow direct manipulation of input fields when needed
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
-
-  // Custom hook for sending messages
-  // This encapsulates the message sending logic provided by the AI system
-  const { sendMessage } = useActions();
-
-  // Effect to update input value when prompt changes
-  // Ensures the input field always reflects the current prompt template
   useEffect(() => {
-    if (prompt) {
-      setChatState((prev) => ({ ...prev, inputValue: prompt.template ?? "" }));
-    }
-  }, [prompt]);
+    setPromptString(prompt?.template || "");
+    setEditTitle(prompt?.title || "");
+    setEditDescription(prompt?.description || "");
+  }, [prompt, setPromptString]);
 
-  // Effect to add global keyboard shortcut for focusing input
-  // Improves user experience by allowing quick access to the input field
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.key === "/" &&
-        !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).nodeName)
-      ) {
-        e.preventDefault();
-        inputRef.current?.focus();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  // Memoized filtered actions based on search and selected actions
-  // This optimizes performance by only recalculating when necessary
-  const filteredActions = useMemo(
-    () =>
-      Object.values(actionsRegistry)
-        .filter(
-          (action) =>
-            (action.metadata?.title
-              ?.toLowerCase()
-              .includes(chatState.actionsSearch.toLowerCase()) ||
-              action.metadata?.description
-                ?.toLowerCase()
-                .includes(chatState.actionsSearch.toLowerCase())) &&
-            !chatState.selectedActions.includes(action.actionId as ActionKey)
-        )
-        .slice(0, 5),
-    [chatState.actionsSearch, chatState.selectedActions]
-  );
-
-  // Handler for '@' key press to show actions menu
-  // This improves UX by providing quick access to the actions menu
-  const handleAtKeyDown = useCallback(async () => {
-    setChatState((prev) => ({
-      ...prev,
-      actionsSearch: "",
-      selectedIndex: 0,
-      showActionsMenu: true,
+  const computedInputVariables = useMemo(() => {
+    const extractedVars = extractVariablesFromPrompt(promptString);
+    return extractedVars.map((name) => ({
+      name,
+      description: "",
+      type: "string",
     }));
-    // Small delay to ensure the search input is focused after the menu appears
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    searchRef.current?.focus();
+  }, [promptString]);
+
+  const handleSave = () => {
+    if (prompt?.id) {
+      saveDraftAsFinalPrompt(prompt.id);
+      toast.success("Prompt saved successfully");
+    } else {
+      toast.error("Something went wrong");
+    }
+  };
+
+  const handleOutputFormatChange = (newFormat: string) => {
+    setPromptString(newFormat);
+    if (prompt?.id) {
+      const updatedPrompt: PromptStructure = {
+        ...prompt,
+        template: newFormat,
+        input_variables: computedInputVariables.map((v) => ({
+          ...v,
+          required: true,
+          variable_validation: null,
+        })),
+        updated_at: new Date().toISOString(),
+      };
+      saveDraftPrompt(prompt.id, updatedPrompt);
+    }
+  };
+
+  const handleDelete = () => {
+    if (prompt?.id) {
+      deletePrompt(prompt.id);
+      toast.success("Prompt deleted successfully");
+    } else {
+      toast.error("Something went wrong");
+    }
+  };
+
+  const onCopy = () => {
+    if (isCopied) return;
+    copyToClipboard(prompt.template);
+  };
+
+  const handleTitleEdit = () => {
+    if (prompt?.id) {
+      editPrompt(prompt.id, { title: editTitle });
+      setIsEditingTitle(false);
+      toast.success("Title updated successfully");
+    }
+  };
+
+  const handleDescriptionEdit = () => {
+    if (prompt?.id) {
+      editPrompt(prompt.id, { description: editDescription });
+      setIsEditingDescription(false);
+      toast.success("Description updated successfully");
+    }
+  };
+
+  const cancelTitleEdit = () => {
+    setEditTitle(prompt?.title || "");
+    setIsEditingTitle(false);
+  };
+
+  const cancelDescriptionEdit = () => {
+    setEditDescription(prompt?.description || "");
+    setIsEditingDescription(false);
+  };
+
+  const highlightVariables = useCallback((code: string) => {
+    const highlightedCode = code.replace(
+      /\{(\w+)\}/g,
+      '<span style="color: hsl(var(--primary));">{$1}</span>'
+    );
+    return <div dangerouslySetInnerHTML={{ __html: highlightedCode }} />;
   }, []);
 
-  // Combined key down handler for '@' and Enter keys
-  // This centralizes keyboard event handling for the input field
-  const onKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (event.key === "@") {
-        handleAtKeyDown();
-        event.preventDefault();
-      } else {
-        onEnterKeyDown(event);
-      }
-    },
-    [handleAtKeyDown, onEnterKeyDown]
-  );
-
-  // Handler for changing variable values
-  // This allows dynamic updating of prompt variables
-  const handleVariableChange = useCallback(
-    (variable: string, value: string) => {
-      setChatState((prev) => ({
-        ...prev,
-        variableValues: { ...prev.variableValues, [variable]: value },
-      }));
-    },
-    []
-  );
-
-  // Function to render input value with variable substitution
-  // This ensures that the displayed input reflects the current variable values
-  const renderInputValue = useCallback(() => {
-    return chatState.inputValue.replace(
-      /\{(\w+)\}/g,
-      (_, variable) => chatState.variableValues[variable] || `{${variable}}`
-    );
-  }, [chatState.inputValue, chatState.variableValues]);
-
-  // Handler for new messages
-  // This updates the message list when new messages are received or sent
-  const handleNewMessage = useCallback(
-    (newMessages: ClientMessage[]) => {
-      setMessages(newMessages);
-    },
-    [setMessages]
-  );
-
-  // Handler for updating selected actions
-  // This allows for flexible updating of the selected actions list
-  const setSelectedActions = useCallback(
-    (value: ActionKey[] | ((prev: ActionKey[]) => ActionKey[])) => {
-      setChatState((prev) => ({
-        ...prev,
-        selectedActions:
-          typeof value === "function" ? value(prev.selectedActions) : value,
-      }));
-    },
-    []
-  );
-
-  // Handler for starting a new chat
-  // This resets the chat state and generates a new chat ID
-  const handleNewChat = useCallback(() => {
-    const newChatId = nanoid();
-    setChatState((prev) => ({ ...prev, inputValue: "" }));
-    setAIState((prev) => ({ ...prev, messages: [], chatId: newChatId }));
-    setMessages([]);
-  }, [setAIState, setMessages]);
-
-  const handleFormSubmit = useCallback(
-    async (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      console.log("Form submitted");
-      // Blur the input on mobile devices to hide the keyboard
-      if (window.innerWidth < 600) {
-        (e.target as HTMLFormElement).message?.blur();
-      }
-
-      const value = renderInputValue().trim();
-      setChatState((prev) => ({ ...prev, inputValue: "" }));
-      setChatState((prev) => ({ ...prev, variableValues: {} }));
-      if (!value) return;
-
-      // Check for API key and prompt user if missing
-      if (!settings.USER_OPEN_AI_API_KEY) {
-        toast.error("Please enter your OpenAI API key in the settings.");
-        toggleSettingsModal();
-        return;
-      }
-
-      // Add user message to the chat
-      handleNewMessage([
-        ...messages,
-        {
-          id: nanoid(),
-          role: "user",
-          display: <UserMessage>{value}</UserMessage>,
-        },
-      ]);
-
-      try {
-        // Send message to the API
-        const response = await sendMessage(
-          value,
-          settings.USER_OPEN_AI_API_KEY,
-          chatState.selectedActions.length > 0
-            ? chatState.selectedActions
-            : undefined
-        );
-        // Add API response to the chat
-        handleNewMessage([...messages, response]);
-        setSelectedActions([]);
-      } catch (error) {
-        console.error(error);
-        // Provide more specific error messages based on error type
-        if (error instanceof TypeError) {
-          toast.error("Network error. Please check your internet connection.");
-        } else if (error instanceof Response && error.status === 401) {
-          toast.error("Invalid API key. Please check your settings.");
-        } else {
-          toast.error("An unexpected error occurred. Please try again later.");
-        }
-      }
-    },
-    [renderInputValue, setMessages]
-  );
   return (
-    <div
-      className="relative flex flex-col w-full h-[calc(100vh-64px)] overflow-hidden"
-      role="main"
-    >
-      {messages.length ? (
-        <>
-          {/* Scrollable area for chat messages */}
-          <ScrollArea className="flex-grow overflow-y-auto">
-            <div className="p-4 pb-24" role="log" aria-live="polite">
-              <ChatList messages={messages} />
-              <div className="w-full h-px" />
-            </div>
-          </ScrollArea>
-          <Separator className="mt-auto" />
-        </>
-      ) : null}
-      {/* Chat input area */}
-      <div className="sticky bottom-0 left-0 right-0 w-full bg-background py-2 ">
-        <div className="mx-auto    px-1 sm:px-4 ">
-          <TextureCard>
-            <div className="flex flex-col space-y-4">
-              {/* Form section replacing variables */}
-              <AgentChatForm
-                variables={variables}
-                variableValues={chatState.variableValues}
-                handleVariableChange={handleVariableChange}
-                inputValue={chatState.inputValue}
-                onSubmit={handleFormSubmit} // Pass the form submit handler
-              />
-              <Separator className="my-2" />
-              <TextureCardContent className="px-4">
-                {/* Actions menu for selecting chat actions */}
-
-                <AgentChatActionsMenu
-                  actionsSearch={chatState.actionsSearch}
-                  setActionsSearch={(value) =>
-                    setChatState((prev) => ({
-                      ...prev,
-                      actionsSearch: value,
-                    }))
-                  }
-                  setAiActionsEnabled={(value) =>
-                    setChatState((prev) => ({
-                      ...prev,
-                      aiActionsEnabled:
-                        typeof value === "function"
-                          ? value(prev.aiActionsEnabled)
-                          : value,
-                    }))
-                  }
-                  aiActionsEnabled={
-                    chatState.showActionsMenu &&
-                    chatState.selectedActions.length <
-                      Object.keys(actionsRegistry).length &&
-                    chatState.aiActionsEnabled
-                  }
-                  filteredActions={filteredActions}
-                  selectedIndex={chatState.selectedIndex}
-                  setSelectedIndex={(value) =>
-                    setChatState((prev) => ({
-                      ...prev,
-                      selectedIndex:
-                        typeof value === "function"
-                          ? value(prev.selectedIndex)
-                          : value,
-                    }))
-                  }
-                  setSelectedActions={setSelectedActions}
-                  searchRef={searchRef}
-                />
-
-                {/* Display for selected actions */}
-                <div className="flex flex-row gap-2 justify-between items-start pb-1">
-                  <SelectedActionsDisplay
-                    selectedActions={chatState.selectedActions}
-                    setSelectedActions={setSelectedActions}
-                    actionsRegistry={actionsRegistry}
-                  />
+    <div className="flex-1 overflow-y-auto bg-background">
+      <div className="flex h-full flex-col">
+        {prompt ? (
+          <div className="flex flex-1 flex-col">
+            <div className="flex items-start p-4">
+              <div className="flex items-start gap-4 text-sm">
+                <div className="p-2 rounded-full bg-neutral-100 dark:bg-neutral-800">
+                  <Pencil className="h-5 w-5 stroke-primary dark:stroke-white-200 fill-primary/30 dark:fill-yellow-200/30" />
                 </div>
-              </TextureCardContent>
+                <div className="grid gap-1">
+                  {/* Title with inline editing */}
+                  <div className="flex items-center gap-2">
+                    {isEditingTitle ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          className="h-8 text-sm font-semibold"
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleTitleEdit}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Check className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={cancelTitleEdit}
+                          className="h-6 w-6 p-0"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 group">
+                        <div className="font-semibold text-gray-700 dark:text-gray-200">
+                          {prompt.title}
+                        </div>
+                        <div
+                          className={`transition-opacity ${isCreator ? "opacity-0 group-hover:opacity-100" : "opacity-0"}`}
+                        >
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setIsEditingTitle(true)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Description with inline editing */}
+                  <div className="flex items-start gap-2">
+                    {isEditingDescription ? (
+                      <div className="flex items-start gap-2 w-full">
+                        <Textarea
+                          value={editDescription}
+                          onChange={(e) => setEditDescription(e.target.value)}
+                          className="h-16 text-xs resize-none"
+                          autoFocus
+                        />
+                        <div className="flex flex-col gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={handleDescriptionEdit}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Check className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={cancelDescriptionEdit}
+                            className="h-6 w-6 p-0"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-2 w-full group">
+                        <div className="line-clamp-3 text-xs max-w-md text-gray-600 dark:text-gray-100">
+                          {prompt.description}
+                        </div>
+                        <div
+                          className={`transition-opacity flex-shrink-0 ${isCreator ? "opacity-0 group-hover:opacity-100" : "opacity-0"}`}
+                        >
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setIsEditingDescription(true)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex gap-4">
+                    <div className="line-clamp-1 text-xs flex gap-2 items-center text-gray-500 dark:text-gray-300">
+                      <IconOpenAI />
+                    </div>
+                    <div className="line-clamp-1 text-xs flex gap-2 items-center text-gray-500 dark:text-gray-300">
+                      <CalendarClock className="size-4" />
+                      {formatRelativeTime(
+                        prompt?.updated_at || prompt.created_at
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="absolute top-2 right-3">
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => toggleLock(prompt?.id || "")}
+                    >
+                      {prompt.locked ? (
+                        <Lock className="size-4 stroke-blue-500" />
+                      ) : (
+                        <UnlockKeyhole className="size-4" />
+                      )}
+                      <span className="sr-only">Locked</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    Prompt is {prompt.locked ? "locked" : "un-locked"}
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
-            <TextureCardFooter className="w-full">
-              {/* User message input form */}
-              <AgentChatUserMessageForm
-                formRef={formRef}
-                inputValue={chatState.inputValue}
-                setInputValue={(value) =>
-                  setChatState((prev) => ({ ...prev, inputValue: value }))
-                }
-                setMessages={handleNewMessage}
-                sendMessage={sendMessage}
-                selectedActions={chatState.selectedActions}
-                setSelectedActions={setSelectedActions}
-                renderInputValue={renderInputValue}
-                handleNewChat={handleNewChat}
-                setVariableValues={(values) =>
-                  setChatState((prev) => ({ ...prev, variableValues: values }))
-                }
-                onKeyDown={onKeyDown}
-                setShowActionsMenu={(value) =>
-                  setChatState((prev) => ({ ...prev, showActionsMenu: value }))
-                }
-                onSubmit={handleFormSubmit}
-              />
-            </TextureCardFooter>
-          </TextureCard>
-        </div>
+
+            <Separator />
+
+            <FadeIn>
+              <AgentPromptVariables inputVariables={computedInputVariables} />
+            </FadeIn>
+
+            <FadeIn>
+              <div className="flex-1 p-4 ">
+                <TextureCardPrimary className="relative">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Prompt</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Editor
+                      value={promptString}
+                      onValueChange={handleOutputFormatChange}
+                      highlight={highlightVariables}
+                      padding={10}
+                      disabled={prompt?.locked}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-within:outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 flex min-h-[80px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    />
+                  </CardContent>
+
+                  <div className="absolute top-2 right-3">
+                    <Button variant="ghost" size="icon" onClick={onCopy}>
+                      {isCopied ? (
+                        <IconCheck className="text-lime-500" />
+                      ) : (
+                        <IconCopy />
+                      )}
+                      <span className="sr-only">Copy code</span>
+                    </Button>
+                  </div>
+                </TextureCardPrimary>
+              </div>
+
+              <div className="flex-1 p-4">
+                {prompt.examples ? (
+                  <PromptUsageExampleComponent examples={prompt.examples} />
+                ) : null}
+              </div>
+            </FadeIn>
+
+            <Separator className="mt-auto" />
+
+            <div className="p-4">
+              <div className="grid gap-4">
+                <div className="flex items-center">
+                  <Label
+                    htmlFor="locked"
+                    className="flex items-center gap-2 text-xs font-normal"
+                  >
+                    <Switch
+                      id="locked"
+                      checked={prompt?.locked || false}
+                      onCheckedChange={() => toggleLock(prompt?.id || "")}
+                    />
+                    Lock
+                  </Label>
+
+                  <div className="ml-auto space-x-2 flex items-center">
+                    <Button
+                      onClick={handleDelete}
+                      size="sm"
+                      variant="ghost"
+                      className="hover:bg-neutral-200 group"
+                      disabled={prompt?.locked}
+                    >
+                      <Trash className="h-4 w-4 group-hover:stroke-red-800 group-hover:fill-red-400" />
+                    </Button>
+                    <Button
+                      onClick={handleSave}
+                      size="sm"
+                      className="space-x-2"
+                      disabled={prompt?.locked}
+                    >
+                      <span>Save prompt</span> <Save className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-8 text-center text-muted-foreground">
+            No prompt selected
+          </div>
+        )}
       </div>
     </div>
   );
