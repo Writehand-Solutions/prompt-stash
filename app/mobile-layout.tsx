@@ -180,9 +180,9 @@ function MobilePromptList({
           <TabsTrigger value="bookmarked">
             <Bookmark className="size-4" />
           </TabsTrigger>
-           <TabsTrigger value="tags">
+           {/* <TabsTrigger value="tags">
             <Tag className="size-4" />
-          </TabsTrigger>
+          </TabsTrigger> */}
         </TabsList>
       </div>
 
@@ -214,7 +214,7 @@ function MobilePromptList({
           </div>
         </ScrollArea>
       </TabsContent>
-      <TabsContent value="tags" className="m-0">
+      {/* <TabsContent value="tags" className="m-0">
         <ScrollArea className="h-[calc(100vh-129px)] ">
           <div className="flex flex-col gap-3 pb-48 pt-4 p-4 ">
             {filteredPrompts.map((prompt, index) => (
@@ -222,7 +222,7 @@ function MobilePromptList({
             ))}
           </div>
         </ScrollArea>
-      </TabsContent>
+      </TabsContent> */}
     </Tabs>
   )
 }

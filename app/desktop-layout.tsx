@@ -182,9 +182,9 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
                   <TabsTrigger value="bookmarked">
                     <Bookmark className="size-4" />
                   </TabsTrigger>
-                  <TabsTrigger value="tags">
+                  {/* <TabsTrigger value="tags">
                     <Tag className="size-4" />
-                  </TabsTrigger>
+                  </TabsTrigger> */}
                 </TabsList>
               </div>
 
@@ -265,7 +265,7 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
               </TabsContent>
 
               {/* Tags Prompts */}
-              <TabsContent value="tags" className="m-0">
+              {/* <TabsContent value="tags" className="m-0">
                 <ScrollArea className="h-[calc(100vh-129px)] z-20 bg-background/95">
                   <div className=" m-3 ">
                     <AnimatePresence initial={false}>
@@ -306,7 +306,7 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
                     </AnimatePresence>
                   </div>
                 </ScrollArea>
-              </TabsContent>
+              </TabsContent> */}
             </Tabs>
           </ResizablePanel>
           <ResizableHandle withHandle />
