@@ -31,6 +31,7 @@ export function PromptCard({
     <div className="flex flex-col space-y-4">
       <TextureCard
         className={cn(
+          "relative", // <-- Add this
           originalPrompt.id === prompt.selected
             ? "shadow-inner border border-black/10 bg-white dark:bg-muted/60 ring-1 ring-offset-2 ring-offset-background ring-accent/30  transition-colors duration-200"
             : ""
@@ -65,20 +66,22 @@ export function PromptCard({
             {originalPrompt.description}
           </TextureCardDescription>
         </TextureCardHeader>
-        <TextureCardContent className="pl-4">
-          {/* Date */}
-          <div className="flex space-x-1 text-xs text-stone-500 mb-1">
-            <span>Prompt</span>
-            <span>•</span>
-            <span>{formatRelativeTime(originalPrompt.created_at)}</span>
-          </div>
+      <TextureCardContent className="pl-4">
+  {/* Date */}
+  <div className="flex space-x-1 text-xs text-stone-500 mb-1">
+    <span>Prompt</span>
+    <span>•</span>
+    <span>{formatRelativeTime(originalPrompt.created_at)}</span>
+  </div>
 
-          {/* Bookmark */}
-          <BookmarkButton
-            initialBookmarked={originalPrompt.bookmarked}
-            id={originalPrompt.id}
-          />
-        </TextureCardContent>
+  {/* Bookmark */}
+  <div className="absolute top-[11px] right-[7px]">
+    <BookmarkButton
+      initialBookmarked={originalPrompt.bookmarked}
+      id={originalPrompt.id}
+    />
+  </div>
+</TextureCardContent>
         {/* Select prompt button */}
         <div className="absolute bottom-4 right-3">
           <SelectPromptButton
@@ -165,7 +168,6 @@ function BookmarkButton({
       variant="ghost"
       size="sm"
       className={cn(
-        "absolute top-[11px] right-[7px] p-1",
         "rounded-tr-[13px] rounded-bl-sm",
         "hover:bg-none ",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
