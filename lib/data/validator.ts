@@ -94,4 +94,6 @@ function generateTags(prompts: PromptStructure[]) {
 
 // export const tags = generateTags(prompts)
 
-export type Prompt = (typeof prompts)[number]
+type DummyArray = PromptStructure[]
+export type Prompt = DummyArray[number]
+

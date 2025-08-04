@@ -224,11 +224,16 @@ export const usePrompts = () => {
 
   // Function to create a new prompt
   const createPrompt = useCallback(
-    (prompt: Omit<PromptStructure, "id">) => {
+    async (prompt: Omit<PromptStructure, "id">) => {
       const newPrompt = { ...prompt, id: generateUniqueId() }
       const validationResult = promptStructureSchema.safeParse(newPrompt)
 
       if (validationResult.success) {
+          const response = await fetch("/api/prompts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(validationResult.data || newPrompt),
+    });
         setPrompts([...prompts, validationResult.data])
       } else {
         console.error(

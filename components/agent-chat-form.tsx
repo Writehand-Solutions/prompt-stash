@@ -1,14 +1,15 @@
-import { motion } from "framer-motion"
-import { Button } from "./ui/button"
-import { Input } from "./ui/input"
-import { Label } from "./ui/label"
-import { TextureCardHeader, TextureCardContent } from "./cult/texture-card"
+import { motion } from "framer-motion";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { TextureCardHeader, TextureCardContent } from "./cult/texture-card";
 
 interface AgentChatFormProps {
-  variables: string[]
-  variableValues: Record<string, string>
-  handleVariableChange: (variable: string, value: string) => void
-  inputValue: string
+  variables: string[];
+  variableValues: Record<string, string>;
+  handleVariableChange: (variable: string, value: string) => void;
+  inputValue: string;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void; // <-- Add this
 }
 
 export function AgentChatForm({
@@ -16,11 +17,12 @@ export function AgentChatForm({
   variableValues,
   handleVariableChange,
   inputValue,
+  onSubmit, // <-- Add this
 }: AgentChatFormProps) {
-  const showForm = inputValue.includes("{") || variables.length > 0
+  const showForm = inputValue.includes("{") || variables.length > 0;
 
   if (!showForm) {
-    return null
+    return null;
   }
 
   return (
@@ -65,50 +67,46 @@ export function AgentChatForm({
           }}
           className="w-full"
         >
-          <div className="space-y-4 p-4">
-            <div>
-              <h3 className="text-lg font-semibold mb-3">Test your prompt</h3>
-            </div>
-            
-            {variables.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {variables.map((variable) => (
-                  <motion.div
-                    key={variable}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-2"
-                  >
-                    <Label htmlFor={variable} className="text-sm font-medium">
-                      {variable}
-                    </Label>
-                    <Input
-                      id={variable}
-                      type="text"
-                      value={variableValues[variable] || ""}
-                      onChange={(e) => handleVariableChange(variable, e.target.value)}
-                      placeholder={`Enter ${variable}`}
-                      className="bg-white text-primary focus-visible:ring-blue-300/0"
-                    />
-                  </motion.div>
-                ))}
+          <form onSubmit={onSubmit}>
+            <div className="space-y-4 p-4">
+              {variables.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {variables.map((variable) => (
+                    <motion.div
+                      key={variable}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                      className="space-y-2"
+                    >
+                      <Label htmlFor={variable} className="text-sm font-medium">
+                        {variable}
+                      </Label>
+                      <Input
+                        id={variable}
+                        type="text"
+                        value={variableValues[variable] || ""}
+                        onChange={(e) =>
+                          handleVariableChange(variable, e.target.value)
+                        }
+                        placeholder={`Enter ${variable}`}
+                        className="bg-white text-primary dark:bg-zinc-900 dark:text-white focus-visible:ring-blue-300/0"
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+
+              <div className="pt-4">
+                <Button type="submit" className="w-full" size="lg">
+                  Submit
+                </Button>
               </div>
-            )}
-            
-            <div className="pt-4">
-              <Button 
-                type="submit" 
-                className="w-full"
-                size="lg"
-              >
-                Submit
-              </Button>
             </div>
-          </div>
+          </form>
         </motion.div>
       </TextureCardHeader>
     </motion.div>
-  )
-} 
+  );
+}

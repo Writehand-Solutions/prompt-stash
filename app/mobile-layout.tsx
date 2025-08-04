@@ -11,7 +11,7 @@ import {
   LogOut,
 } from "lucide-react"
 
-import { PromptStructure } from "@/lib/data/default-prompts"
+import { PromptStructure } from "@/lib/data/validator"
 import { useFilters } from "@/lib/hooks/use-prompt-filters"
 import { usePrompt, usePrompts } from "@/lib/hooks/use-prompts"
 import { useAuth } from "@/lib/hooks/use-auth"
@@ -24,6 +24,8 @@ import Chat from "@/components/agent-chat"
 import { AgentPromptEditor } from "@/components/agent-prompt"
 import { NewPromptForm } from "@/components/create-new-prompt-form"
 import { MobilePromptCard } from "@/components/prompt-card"
+import { PromptTagList } from "@/components/prompt-tag-list"
+import { set } from "date-fns"
 
 export function MobileLayout() {
   const [tab, setTab] = useState("prompts")
@@ -31,7 +33,7 @@ export function MobileLayout() {
 
   // Global state
   const [prompt] = usePrompt()
-  const [filters] = useFilters()
+  const [filters  , setFilters] = useFilters()
   const { prompts } = usePrompts()
 
   // Filter the prompts based on the selected filters
@@ -90,6 +92,8 @@ export function MobileLayout() {
               <MobilePromptList
                 filteredPrompts={filteredPrompts}
                 setTab={setTab}
+                filters={filters}
+                setFilters={setFilters}
               />
             </TabsContent>
             <TabsContent value="edit" className="m-0">
@@ -121,9 +125,13 @@ export function MobileLayout() {
 function MobilePromptList({
   setTab,
   filteredPrompts,
+  filters,
+  setFilters,
 }: {
   setTab: (string) => void
   filteredPrompts: PromptStructure[]
+  filters: any
+  setFilters: (filters: any) => void
 }) {
   const bookmarkedPrompts = filteredPrompts.filter(
     (prompt) => prompt.bookmarked
@@ -156,6 +164,9 @@ function MobilePromptList({
         </form>
       </div>
       <TabsContent value="all" className="m-0">
+          <div className="p-4">
+                          <PromptTagList filters={filters} setFilters={setFilters} />
+                        </div>
         <ScrollArea className="h-[calc(100vh-129px)] ">
           <div className="flex flex-col gap-3 pb-48 pt-4 p-4 ">
             {filteredPrompts.map((prompt, index) => (
@@ -174,6 +185,9 @@ function MobilePromptList({
         </ScrollArea>
       </TabsContent>
       <TabsContent value="tags" className="m-0">
+          <div className="p-4">
+                          <PromptTagList filters={filters} setFilters={setFilters} />
+                        </div>
         <ScrollArea className="h-[calc(100vh-129px)] ">
           <div className="flex flex-col gap-3 pb-48 pt-4 p-4 ">
             {filteredPrompts.map((prompt, index) => (
