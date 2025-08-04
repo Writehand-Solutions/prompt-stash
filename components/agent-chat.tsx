@@ -277,16 +277,18 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
       className="relative flex flex-col w-full h-[calc(100vh-64px)] overflow-hidden"
       role="main"
     >
-      {/* Scrollable area for chat messages */}
-      <ScrollArea className="flex-grow overflow-y-auto">
-        <div className="p-4 pb-24" role="log" aria-live="polite">
-          {messages.length ? <ChatList messages={messages} /> : <EmptyScreen />}
-          <div className="w-full h-px" />
-        </div>
-      </ScrollArea>
-
-      <Separator className="mt-auto" />
-
+      {messages.length ? (
+        <>
+          {/* Scrollable area for chat messages */}
+          <ScrollArea className="flex-grow overflow-y-auto">
+            <div className="p-4 pb-24" role="log" aria-live="polite">
+              <ChatList messages={messages} />
+              <div className="w-full h-px" />
+            </div>
+          </ScrollArea>
+          <Separator className="mt-auto" />
+        </>
+      ) : null}
       {/* Chat input area */}
       <div className="sticky bottom-0 left-0 right-0 w-full bg-background py-2 ">
         <div className="mx-auto    px-1 sm:px-4 ">
@@ -300,7 +302,7 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
                 inputValue={chatState.inputValue}
                 onSubmit={handleFormSubmit} // Pass the form submit handler
               />
-<Separator className="my-2" />
+              <Separator className="my-2" />
               <TextureCardContent className="px-4">
                 {/* Actions menu for selecting chat actions */}
 
