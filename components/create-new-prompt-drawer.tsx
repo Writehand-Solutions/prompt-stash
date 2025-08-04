@@ -30,8 +30,7 @@ export function CreateNewPromptDrawer({
       )}
     >
       <div className={cn("", isCollapsed ? "hidden" : "pl-2")}>
-        <CultLogo className="size-5 fill-black dark:fill-blue-100" />
-      </div>
+<CultLogo className="size-5 invert-0 dark:invert" />      </div>
       <Drawer>
         <DrawerTrigger asChild>
           <Button

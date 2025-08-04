@@ -125,25 +125,22 @@ export function AgentChatUserMessageForm({
         <div className="hidden md:block absolute right-0 bottom-[1px] sm:right-[1px]">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                type="submit"
-                size="icon"
-                className={cn(
-                  inputValue === ""
-                    ? "bg-background text-secondary-foreground hover:bg-primary/90 hover:text-primary-foreground"
-                    : "",
-
-                  "rounded-t-[2px] rounded-bl-[2px] rounded-r-xl h-[100px] w-[46px] transition-colors duration-300 ease-out"
-                )}
-                disabled={
-                  !settings.USER_OPEN_AI_API_KEY ||
-                  (inputValue === "" && prompt?.template === "")
-                }
-                aria-label="Send message"
-              >
-                <IconArrowElbow />
-                <span className="sr-only">Send message</span>
-              </Button>
+             <Button
+  type="submit"
+  size="icon"
+  variant="yellow" // <-- Use your new variant
+  className={cn(
+    "rounded-t-[2px] rounded-bl-[2px] rounded-r-xl h-[100px] w-[46px] transition-colors duration-300 ease-out"
+  )}
+  disabled={
+    !settings.USER_OPEN_AI_API_KEY ||
+    (inputValue === "" && prompt?.template === "")
+  }
+  aria-label="Send message"
+>
+  <IconArrowElbow />
+  <span className="sr-only">Send message</span>
+</Button>
             </TooltipTrigger>
             <TooltipContent>Send message</TooltipContent>
           </Tooltip>

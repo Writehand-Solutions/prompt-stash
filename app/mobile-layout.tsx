@@ -3,19 +3,28 @@
 import { useState } from "react"
 import {
   Bookmark,
+  Filter,
   ListTreeIcon,
   PlusIcon,
   Search,
   Tag,
   X,
-  LogOut,
 } from "lucide-react"
 
 import { PromptStructure } from "@/lib/data/validator"
 import { useFilters } from "@/lib/hooks/use-prompt-filters"
 import { usePrompt, usePrompts } from "@/lib/hooks/use-prompts"
-import { useAuth } from "@/lib/hooks/use-auth"
 import { Button } from "@/components/ui/button"
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
@@ -24,16 +33,14 @@ import Chat from "@/components/agent-chat"
 import { AgentPromptEditor } from "@/components/agent-prompt"
 import { NewPromptForm } from "@/components/create-new-prompt-form"
 import { MobilePromptCard } from "@/components/prompt-card"
-import { PromptTagList } from "@/components/prompt-tag-list"
-import { set } from "date-fns"
+import { PromptFilterListSidebar } from "@/components/prompt-filter-sidebar"
 
 export function MobileLayout() {
   const [tab, setTab] = useState("prompts")
-  const { logout } = useAuth()
 
   // Global state
   const [prompt] = usePrompt()
-  const [filters  , setFilters] = useFilters()
+  const [filters] = useFilters()
   const { prompts } = usePrompts()
 
   // Filter the prompts based on the selected filters
@@ -49,41 +56,52 @@ export function MobileLayout() {
     return matchesUseCases
   })
 
-  const bookmarkedPrompts = filteredPrompts.filter(
-    (prompt) => prompt.bookmarked
-  )
-
   return (
     <div className="grid h-screen w-full ">
       <div className="flex flex-col">
         <Tabs value={tab} onValueChange={setTab}>
           <header className="sticky top-0 z-10 flex h-[57px] items-center gap-1 border-b bg-background px-4">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="md:hidden hover:bg-transparent"
-              >
-                <PlusIcon className="size-4" />
-                <span className="sr-only">New prompt</span>
-              </Button>
-            </div>
+            <Drawer>
+              <DrawerTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="bg-primary rounded-full py-1 px-1.5 hover:bg-primary/80"
+                >
+                  <PlusIcon className="text-white" />
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent className="bg-white flex flex-col fixed bottom-0 left-0 right-0 max-h-[96%] rounded-t-[10px]">
+                <DrawerHeader className=" self-start w-full  md:pl-64">
+                  <DrawerTitle>Add new prompt</DrawerTitle>
+                </DrawerHeader>
 
-            <TabsList className="grid w-full grid-cols-2 max-w-[200px]">
-              <TabsTrigger value="prompts">Prompts</TabsTrigger>
-              <TabsTrigger value="edit">Edit</TabsTrigger>
-            </TabsList>
+                <div className="w-full mx-auto flex flex-col overflow-auto p-4 rounded-t-[10px]">
+                  <div className="flex justify-center overflow-auto">
+                    <NewPromptForm />
+                  </div>
+                </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={logout}
-                className="md:hidden hover:bg-transparent"
-              >
-                <LogOut className="size-4" />
-                <span className="sr-only">Logout</span>
-              </Button>
+                <DrawerClose className="absolute top-6 right-6">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="border border-black/10 dark:border-white/10 py-6 rounded-full hover:bg-black/10 dark:hover:bg-white/10 active:bg-black/20 dark:active:bg-white/20"
+                  >
+                    <X />
+                  </Button>
+                </DrawerClose>
+
+                <DrawerFooter></DrawerFooter>
+              </DrawerContent>
+            </Drawer>
+
+            <div className="flex w-full justify-end  ">
+              <TabsList className="grid w-full grid-cols-3  max-w-[230px]">
+                <TabsTrigger value="prompts">Prompts</TabsTrigger>
+                <TabsTrigger value="edit">Edit</TabsTrigger>
+                <TabsTrigger value="test">Test</TabsTrigger>
+              </TabsList>
             </div>
           </header>
 
@@ -92,8 +110,6 @@ export function MobileLayout() {
               <MobilePromptList
                 filteredPrompts={filteredPrompts}
                 setTab={setTab}
-                filters={filters}
-                setFilters={setFilters}
               />
             </TabsContent>
             <TabsContent value="edit" className="m-0">
@@ -125,29 +141,46 @@ export function MobileLayout() {
 function MobilePromptList({
   setTab,
   filteredPrompts,
-  filters,
-  setFilters,
 }: {
   setTab: (string) => void
   filteredPrompts: PromptStructure[]
-  filters: any
-  setFilters: (filters: any) => void
 }) {
   const bookmarkedPrompts = filteredPrompts.filter(
     (prompt) => prompt.bookmarked
   );
-
   return (
     <Tabs defaultValue="all">
       <div className="flex items-center  justify-between pr-4 pl-2 py-2">
-        <TabsList className="grid w-full grid-cols-3  max-w-xs">
+        <Drawer>
+          <DrawerTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden hover:bg-transparent"
+            >
+              <Filter className="size-4" />
+              <span className="sr-only">Filters</span>
+            </Button>
+          </DrawerTrigger>
+          <DrawerContent className="max-h-[80vh]">
+            <DrawerHeader>
+              <DrawerTitle>Filters</DrawerTitle>
+              <DrawerDescription>
+                Filter your prompts by tag, model and more.
+              </DrawerDescription>
+            </DrawerHeader>
+            <PromptFilterListSidebar isCollapsed={false} />
+          </DrawerContent>
+        </Drawer>
+
+        <TabsList className="grid w-full grid-cols-2  max-w-xs">
           <TabsTrigger value="all">
             <ListTreeIcon className="size-4" />
           </TabsTrigger>
           <TabsTrigger value="bookmarked">
             <Bookmark className="size-4" />
           </TabsTrigger>
-          <TabsTrigger value="tags">
+           <TabsTrigger value="tags">
             <Tag className="size-4" />
           </TabsTrigger>
         </TabsList>
@@ -163,10 +196,7 @@ function MobilePromptList({
           </div>
         </form>
       </div>
-      <TabsContent value="all" className="m-0">
-          <div className="p-4">
-                          <PromptTagList filters={filters} setFilters={setFilters} />
-                        </div>
+       <TabsContent value="all" className="m-0">
         <ScrollArea className="h-[calc(100vh-129px)] ">
           <div className="flex flex-col gap-3 pb-48 pt-4 p-4 ">
             {filteredPrompts.map((prompt, index) => (
@@ -185,9 +215,6 @@ function MobilePromptList({
         </ScrollArea>
       </TabsContent>
       <TabsContent value="tags" className="m-0">
-          <div className="p-4">
-                          <PromptTagList filters={filters} setFilters={setFilters} />
-                        </div>
         <ScrollArea className="h-[calc(100vh-129px)] ">
           <div className="flex flex-col gap-3 pb-48 pt-4 p-4 ">
             {filteredPrompts.map((prompt, index) => (

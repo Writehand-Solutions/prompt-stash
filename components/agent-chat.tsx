@@ -1,46 +1,53 @@
-"use client"
+"use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { AI } from "@/ai/actions"
-import { actionsRegistry } from "@/ai/registry"
-import { ClientMessage } from "@/ai/types"
-import { useActions, useAIState, useUIState } from "ai/rsc"
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { AI } from "@/ai/actions";
+import { actionsRegistry } from "@/ai/registry";
+import { ClientMessage } from "@/ai/types";
+import { useActions, useAIState, useUIState } from "ai/rsc";
 
-import { PromptStructure } from "@/lib/data/validator"
-import { useEnterSubmit } from "@/lib/hooks/use-enter-submit"
-import { usePromptString } from "@/lib/hooks/use-prompt-variables"
-import { nanoid } from "@/lib/utils"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { AgentChatActionsMenu } from "@/components/agent-chat-action-menu"
+import { PromptStructure } from "@/lib/data/validator";
+import { useEnterSubmit } from "@/lib/hooks/use-enter-submit";
+import { usePromptString } from "@/lib/hooks/use-prompt-variables";
+import { nanoid } from "@/lib/utils";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { AgentChatActionsMenu } from "@/components/agent-chat-action-menu";
 import {
   TextureCard,
   TextureCardContent,
   TextureCardFooter,
-} from "@/components/cult/texture-card"
+} from "@/components/cult/texture-card";
 
-import { UserMessage } from "./message"
-import { ChatList } from "./agent-chat-list"
-import { AgentChatUserMessageForm } from "./agent-chat-user-message-form"
-import { AgentChatForm } from "./agent-chat-form"
-import { SelectedActionsDisplay } from "./selected-action-display"
-import { toast } from "sonner"
-import { useSettings, useSettingsModal } from "@/lib/hooks/use-api-key"
+import { UserMessage } from "./message";
+import { ChatList } from "./agent-chat-list";
+import { AgentChatUserMessageForm } from "./agent-chat-user-message-form";
+import { AgentChatForm } from "./agent-chat-form";
+import { SelectedActionsDisplay } from "./selected-action-display";
+import { toast } from "sonner";
+import { useSettings, useSettingsModal } from "@/lib/hooks/use-api-key";
+import { EmptyScreen } from "./empty-screen";
 
 // Define the type for action keys based on the actionsRegistry
 // This allows for type-safe access to actions throughout the component
-type ActionKey = keyof typeof actionsRegistry
+type ActionKey = keyof typeof actionsRegistry;
 
 // Interface for the chat state
 // This centralizes all the state variables related to the chat interface
 interface ChatState {
-  variableValues: Record<string, string> // Stores values for variables in the prompt
-  inputValue: string // Current value of the input field
-  showActionsMenu: boolean // Controls visibility of the actions menu
-  actionsSearch: string // Current search term in the actions menu
-  selectedActions: ActionKey[] // List of currently selected actions
-  selectedIndex: number // Index of the currently selected action in the menu
-  aiActionsEnabled: boolean
+  variableValues: Record<string, string>; // Stores values for variables in the prompt
+  inputValue: string; // Current value of the input field
+  showActionsMenu: boolean; // Controls visibility of the actions menu
+  actionsSearch: string; // Current search term in the actions menu
+  selectedActions: ActionKey[]; // List of currently selected actions
+  selectedIndex: number; // Index of the currently selected action in the menu
+  aiActionsEnabled: boolean;
 }
 
 // Main Chat component
@@ -48,13 +55,13 @@ interface ChatState {
 export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
   // Extract variables from the prompt using a custom hook
   // This allows for dynamic prompts with variable placeholders
-  const { variables } = usePromptString(prompt)
+  const { variables } = usePromptString(prompt);
 
-  const { settings } = useSettings()
-    const { toggleSettingsModal } = useSettingsModal()
+  const { settings } = useSettings();
+  const { toggleSettingsModal } = useSettingsModal();
   // Custom hook for handling form submission on Enter key press
   // Improves user experience by allowing quick message sending
-  const { formRef, onKeyDown: onEnterKeyDown } = useEnterSubmit()
+  const { formRef, onKeyDown: onEnterKeyDown } = useEnterSubmit();
 
   // State management
   // Using a single state object for all chat-related-action state and variable state
@@ -66,32 +73,32 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
     selectedActions: [],
     selectedIndex: 0,
     aiActionsEnabled: true,
-  })
+  });
 
   // Use AI-specific hooks for managing messages and AI state
   // These hooks integrate with the AI system to handle message flow
   const [messages, setMessages] = useUIState<typeof AI>() as [
     ClientMessage[],
     (messages: ClientMessage[]) => void,
-  ]
-  const [_, setAIState] = useAIState<typeof AI>()
+  ];
+  const [_, setAIState] = useAIState<typeof AI>();
 
   // Refs for accessing DOM elements
   // These allow direct manipulation of input fields when needed
-  const inputRef = useRef<HTMLTextAreaElement>(null)
-  const searchRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   // Custom hook for sending messages
   // This encapsulates the message sending logic provided by the AI system
-  const { sendMessage } = useActions()
+  const { sendMessage } = useActions();
 
   // Effect to update input value when prompt changes
   // Ensures the input field always reflects the current prompt template
   useEffect(() => {
     if (prompt) {
-      setChatState((prev) => ({ ...prev, inputValue: prompt.template ?? "" }))
+      setChatState((prev) => ({ ...prev, inputValue: prompt.template ?? "" }));
     }
-  }, [prompt])
+  }, [prompt]);
 
   // Effect to add global keyboard shortcut for focusing input
   // Improves user experience by allowing quick access to the input field
@@ -101,13 +108,13 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
         e.key === "/" &&
         !["INPUT", "TEXTAREA"].includes((e.target as HTMLElement).nodeName)
       ) {
-        e.preventDefault()
-        inputRef.current?.focus()
+        e.preventDefault();
+        inputRef.current?.focus();
       }
-    }
-    document.addEventListener("keydown", handleKeyDown)
-    return () => document.removeEventListener("keydown", handleKeyDown)
-  }, [])
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Memoized filtered actions based on search and selected actions
   // This optimizes performance by only recalculating when necessary
@@ -126,7 +133,7 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
         )
         .slice(0, 5),
     [chatState.actionsSearch, chatState.selectedActions]
-  )
+  );
 
   // Handler for '@' key press to show actions menu
   // This improves UX by providing quick access to the actions menu
@@ -136,25 +143,25 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
       actionsSearch: "",
       selectedIndex: 0,
       showActionsMenu: true,
-    }))
+    }));
     // Small delay to ensure the search input is focused after the menu appears
-    await new Promise((resolve) => setTimeout(resolve, 0))
-    searchRef.current?.focus()
-  }, [])
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    searchRef.current?.focus();
+  }, []);
 
   // Combined key down handler for '@' and Enter keys
   // This centralizes keyboard event handling for the input field
   const onKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (event.key === "@") {
-        handleAtKeyDown()
-        event.preventDefault()
+        handleAtKeyDown();
+        event.preventDefault();
       } else {
-        onEnterKeyDown(event)
+        onEnterKeyDown(event);
       }
     },
     [handleAtKeyDown, onEnterKeyDown]
-  )
+  );
 
   // Handler for changing variable values
   // This allows dynamic updating of prompt variables
@@ -163,10 +170,10 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
       setChatState((prev) => ({
         ...prev,
         variableValues: { ...prev.variableValues, [variable]: value },
-      }))
+      }));
     },
     []
-  )
+  );
 
   // Function to render input value with variable substitution
   // This ensures that the displayed input reflects the current variable values
@@ -174,17 +181,17 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
     return chatState.inputValue.replace(
       /\{(\w+)\}/g,
       (_, variable) => chatState.variableValues[variable] || `{${variable}}`
-    )
-  }, [chatState.inputValue, chatState.variableValues])
+    );
+  }, [chatState.inputValue, chatState.variableValues]);
 
   // Handler for new messages
   // This updates the message list when new messages are received or sent
   const handleNewMessage = useCallback(
     (newMessages: ClientMessage[]) => {
-      setMessages(newMessages)
+      setMessages(newMessages);
     },
     [setMessages]
-  )
+  );
 
   // Handler for updating selected actions
   // This allows for flexible updating of the selected actions list
@@ -194,91 +201,91 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
         ...prev,
         selectedActions:
           typeof value === "function" ? value(prev.selectedActions) : value,
-      }))
+      }));
     },
     []
-  )
+  );
 
   // Handler for starting a new chat
   // This resets the chat state and generates a new chat ID
   const handleNewChat = useCallback(() => {
-    const newChatId = nanoid()
-    setChatState((prev) => ({ ...prev, inputValue: "" }))
-    setAIState((prev) => ({ ...prev, messages: [], chatId: newChatId }))
-    setMessages([])
-  }, [setAIState, setMessages])
+    const newChatId = nanoid();
+    setChatState((prev) => ({ ...prev, inputValue: "" }));
+    setAIState((prev) => ({ ...prev, messages: [], chatId: newChatId }));
+    setMessages([]);
+  }, [setAIState, setMessages]);
 
   const handleFormSubmit = useCallback(
-       async (e: React.FormEvent<HTMLFormElement>) => {
-              e.preventDefault()
-               console.log("Form submitted")
-              // Blur the input on mobile devices to hide the keyboard
-              if (window.innerWidth < 600) {
-                (e.target as HTMLFormElement).message?.blur()
-              }
-      
-              const value = renderInputValue().trim()
-              setChatState((prev) => ({ ...prev, inputValue: '' }))
-              setChatState((prev) => ({ ...prev, variableValues: {} }))
-              if (!value) return
-      
-              // Check for API key and prompt user if missing
-              if (!settings.USER_OPEN_AI_API_KEY) {
-                toast.error("Please enter your OpenAI API key in the settings.")
-                toggleSettingsModal()
-                return
-              }
-      
-              // Add user message to the chat
-              handleNewMessage([
-  ...messages,
-  {
-    id: nanoid(),
-    role: "user",
-    display: <UserMessage>{value}</UserMessage>,
-  },
-])
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      console.log("Form submitted");
+      // Blur the input on mobile devices to hide the keyboard
+      if (window.innerWidth < 600) {
+        (e.target as HTMLFormElement).message?.blur();
+      }
 
-              try {
-                // Send message to the API
-                const response = await sendMessage(
-                  value,
-                  settings.USER_OPEN_AI_API_KEY,
-                  chatState.selectedActions.length > 0 ? chatState.selectedActions : undefined
-                )
-                // Add API response to the chat
-                handleNewMessage([...messages, response])
-                setSelectedActions([])
-              } catch (error) {
-                console.error(error)
-                // Provide more specific error messages based on error type
-                if (error instanceof TypeError) {
-                  toast.error("Network error. Please check your internet connection.")
-                } else if (error instanceof Response && error.status === 401) {
-                  toast.error("Invalid API key. Please check your settings.")
-                } else {
-                  toast.error("An unexpected error occurred. Please try again later.")
-                }
-              }
-            },[renderInputValue, setMessages])
+      const value = renderInputValue().trim();
+      setChatState((prev) => ({ ...prev, inputValue: "" }));
+      setChatState((prev) => ({ ...prev, variableValues: {} }));
+      if (!value) return;
+
+      // Check for API key and prompt user if missing
+      if (!settings.USER_OPEN_AI_API_KEY) {
+        toast.error("Please enter your OpenAI API key in the settings.");
+        toggleSettingsModal();
+        return;
+      }
+
+      // Add user message to the chat
+      handleNewMessage([
+        ...messages,
+        {
+          id: nanoid(),
+          role: "user",
+          display: <UserMessage>{value}</UserMessage>,
+        },
+      ]);
+
+      try {
+        // Send message to the API
+        const response = await sendMessage(
+          value,
+          settings.USER_OPEN_AI_API_KEY,
+          chatState.selectedActions.length > 0
+            ? chatState.selectedActions
+            : undefined
+        );
+        // Add API response to the chat
+        handleNewMessage([...messages, response]);
+        setSelectedActions([]);
+      } catch (error) {
+        console.error(error);
+        // Provide more specific error messages based on error type
+        if (error instanceof TypeError) {
+          toast.error("Network error. Please check your internet connection.");
+        } else if (error instanceof Response && error.status === 401) {
+          toast.error("Invalid API key. Please check your settings.");
+        } else {
+          toast.error("An unexpected error occurred. Please try again later.");
+        }
+      }
+    },
+    [renderInputValue, setMessages]
+  );
   return (
     <div
       className="relative flex flex-col w-full h-[calc(100vh-64px)] overflow-hidden"
       role="main"
     >
-      {messages.length ?
-      <>
       {/* Scrollable area for chat messages */}
       <ScrollArea className="flex-grow overflow-y-auto">
         <div className="p-4 pb-24" role="log" aria-live="polite">
-           <ChatList messages={messages} /> 
+          {messages.length ? <ChatList messages={messages} /> : <EmptyScreen />}
           <div className="w-full h-px" />
         </div>
       </ScrollArea>
 
       <Separator className="mt-auto" />
-      </>
-      : null}
 
       {/* Chat input area */}
       <div className="sticky bottom-0 left-0 right-0 w-full bg-background py-2 ">
@@ -293,7 +300,7 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
                 inputValue={chatState.inputValue}
                 onSubmit={handleFormSubmit} // Pass the form submit handler
               />
-
+<Separator className="my-2" />
               <TextureCardContent className="px-4">
                 {/* Actions menu for selecting chat actions */}
 
@@ -373,5 +380,5 @@ export default function Chat({ prompt }: { prompt: PromptStructure | null }) {
         </div>
       </div>
     </div>
-  )
+  );
 }

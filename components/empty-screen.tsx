@@ -27,8 +27,8 @@ export function EmptyScreen() {
         </TextureCardHeader>
         <TextureCardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2 max-w-sm">
-              {/* <TabsTrigger value="about">About</TabsTrigger> */}
+            <TabsList className="grid w-full grid-cols-3 max-w-sm">
+              <TabsTrigger value="about">About</TabsTrigger>
               <TabsTrigger value="features">Features</TabsTrigger>
               <TabsTrigger value="security">Security</TabsTrigger>
             </TabsList>

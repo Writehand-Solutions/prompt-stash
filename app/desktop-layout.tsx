@@ -23,8 +23,9 @@ import { usePrompt, usePrompts } from "@/lib/hooks/use-prompts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  ResizableHandle,
   ResizablePanel,
-  ResizablePanelGroup
+  ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
@@ -43,6 +44,7 @@ import { useAuth } from "@/lib/hooks/use-auth";
 import { toast } from "sonner";
 import { ModeToggle } from "../components/theme-provider";
 import { PromptTagList } from "@/components/prompt-tag-list";
+import { PromptFilterListSidebar } from "@/components/prompt-filter-sidebar";
 interface PromptLibraryProps {
   defaultCollapsed?: boolean;
   navCollapsedSize?: number;
@@ -100,12 +102,12 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
   defaultCollapsed = false,
   navCollapsedSize,
 }) => {
-  const isCollapsed = true;
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const { logout } = useAuth();
 
   // Global State
   const [prompt] = usePrompt();
-  const [filters , setFilters] = useFilters();
+  const [filters] = useFilters();
   const { prompts } = usePrompts();
   const [searchQuery, setSearchQuery] = useSearchQuery();
   const [open, setOpen] = useState(false);
@@ -124,20 +126,28 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
           className="bg-neutral-100 dark:bg-neutral-900"
         >
           <ResizablePanel
-            defaultSize={6}
+            defaultSize={15}
             collapsedSize={navCollapsedSize}
             collapsible={true}
             minSize={15}
             maxSize={20}
-            className="min-w-[60px] max-w-[60px] bg-neutral-100 dark:bg-neutral-900 transition-all duration-300 ease-in-out"
+            onCollapse={(collapsed: any) => {
+              setIsCollapsed(collapsed);
+
+              document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(collapsed)}`;
+            }}
+            className={cn(
+              isCollapsed &&
+                "min-w-[60px] bg-neutral-100 dark:bg-neutral-900 transition-all duration-300 ease-in-out"
+            )}
           >
             <CreateNewPromptDrawer isCollapsed={isCollapsed} />
             <Separator />
-
+            <PromptFilterListSidebar isCollapsed={isCollapsed} />
             {/* User Settings */}
             <div className="absolute bottom-6 left-3">
               <div className={cn("flex gap-2", isCollapsed ? "flex-col " : "")}>
-                 <Button
+                <Button
                   variant="outline"
                   size="icon"
                   onClick={() => setOpen(true)}
@@ -148,8 +158,8 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
                 </Button>
                 <ModeToggle />
                 <ApiKeyInputModal />
-               
-                <Button
+
+                {/* <Button
                   variant="outline"
                   size="icon"
                   onClick={logout}
@@ -157,11 +167,11 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
                   aria-label="Logout"
                 >
                   <LogOut className="h-[1.2rem] w-[1.2rem] group-hover:rotate-6 transition-all" />
-                </Button>
+                </Button> */}
               </div>
             </div>
           </ResizablePanel>
-
+          <ResizableHandle withHandle />
           {/* Center Panel */}
           <ResizablePanel defaultSize={40} minSize={36} className="shadow-lg">
             <Tabs defaultValue="all">
@@ -197,9 +207,6 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
 
               {/* All Prompts */}
               <TabsContent value="all" className="m-0">
-                <div className="p-4">
-                  <PromptTagList filters={filters} setFilters={setFilters} />
-                </div>
                 <ScrollArea className="h-[calc(100vh-129px)] z-20 bg-background/95">
                   <div className=" m-3 ">
                     <AnimatePresence initial={false}>
@@ -259,9 +266,6 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
 
               {/* Tags Prompts */}
               <TabsContent value="tags" className="m-0">
-                <div className="p-4">
-                  <PromptTagList filters={filters} setFilters={setFilters} />
-                </div>
                 <ScrollArea className="h-[calc(100vh-129px)] z-20 bg-background/95">
                   <div className=" m-3 ">
                     <AnimatePresence initial={false}>
@@ -305,7 +309,7 @@ export const DesktopLayout: React.FC<PromptLibraryProps> = ({
               </TabsContent>
             </Tabs>
           </ResizablePanel>
-
+          <ResizableHandle withHandle />
           <ResizablePanel defaultSize={45} minSize={42}>
             <Tabs defaultValue="test">
               <div className="flex items-center  justify-between px-4 py-2">
