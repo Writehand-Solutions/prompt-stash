@@ -51,6 +51,15 @@ const formSchema = z.object({
     .max(500, "Description must be 500 characters or less"),
   template: z.string().min(1, "Template is required"),
   tags: z.any(),
+  input_variables: z.array(
+    z.object({
+      name: z.string(),
+      description: z.string(),
+      type: z.string(),
+      required: z.boolean(),
+      variable_validation:z.string()
+    })
+  ).optional()
 })
 
 type FormSchema = z.infer<typeof formSchema>
@@ -77,6 +86,9 @@ export function NewPromptForm() {
      const tagsArray = data.tags
     ? data.tags.split(",").map((tag: string) => tag.trim()).filter(Boolean)
     : [];
+    const inputVarsArray = Array.isArray(data.input_variables)
+    ? data.input_variables
+    : [];
 
     const promptData: Partial<PromptStructure> = {
       ...data,
@@ -85,11 +97,10 @@ export function NewPromptForm() {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       bookmarked: false,
-      input_variables: [],
+      input_variables: inputVarsArray,
       locked: false,
       creator: currentUser,
     }
-
     try {
       await createPrompt(promptData as PromptStructure)
       toast.success("Prompt created successfully")
@@ -128,17 +139,31 @@ export function NewPromptForm() {
   }
 
   const handleVariablesGenerated = (variables: Array<{ name: string; description: string; type: string }>) => {
-    const currentTemplate = form.getValues("template") || ""
-    const variablePlaceholders = variables.map(v => `{${v.name}}`).join(" ")
-    
-    // Add variables to the template if it's empty, otherwise append them
-    const newTemplate = currentTemplate 
-      ? `${currentTemplate}\n\nVariables: ${variablePlaceholders}`
-      : `Use the following variables in your response:\n${variablePlaceholders}`
-    
-    form.setValue("template", newTemplate)
-    toast.success(`${variables.length} variables added to your prompt`)
-  }
+  // Merge new variables into existing ones
+  const existingVars = form.getValues("input_variables") || [];
+  const mergedVariables = [
+    ...existingVars,
+    ...variables.map(v => ({
+      ...v,
+      required: true,
+      variable_validation: "^.+$"
+    }))
+  ];
+
+  // Save back to form
+  form.setValue("input_variables", mergedVariables);
+
+  // Always rebuild the variables section in the template
+  const variablePlaceholders = mergedVariables
+    .map(v => `{${v.name}}`)
+    .join(" ");
+
+  const newTemplate = `Use the following variables in your response:\n${variablePlaceholders}`;
+  form.setValue("template", newTemplate);
+
+  toast.success(`${variables.length} variables added to your prompt`);
+};
+
 
   return (
     <Card className="w-full max-w-3xl mx-auto h-[1000px] rounded-2xl">
