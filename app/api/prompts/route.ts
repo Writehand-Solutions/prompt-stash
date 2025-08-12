@@ -3,6 +3,8 @@ import fs from "fs/promises"
 import path from "path"
 import slugify from "slugify"
 import yaml from "js-yaml"
+export const runtime = "nodejs";          // ensures Node runtime (FS access)
+export const dynamic = "force-dynamic";   // don't pre-render/cached-return an empty list
 
 // If you have a Zod schema, import it. Otherwise we’ll skip strict validation.
 // import { promptStructureSchema } from "@/lib/data/validator"
