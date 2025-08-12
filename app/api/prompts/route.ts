@@ -1,3 +1,5 @@
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 import { promptStructureSchema } from "@/lib/data/validator";
 import { loadMarkdownPrompts } from "@/lib/server/loadMarkdownPrompts";
 import fs from "fs/promises";
