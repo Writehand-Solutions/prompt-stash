@@ -52,6 +52,22 @@ function parseFrontmatter(fileContent: string): { data: any; content: string } {
   return { data, content };
 }
 
+async function computeVersion(): Promise<string> {
+  try {
+    await ensureDir();
+    const files = await fs.readdir(PROMPTS_DIR);
+    const mdFiles = files.filter((f) => f.endsWith(".md"));
+    if (mdFiles.length === 0) return "0";
+    const stats = await Promise.all(
+      mdFiles.map((f) => fs.stat(path.join(PROMPTS_DIR, f)))
+    );
+    const newest = Math.max(...stats.map((s) => s.mtimeMs));
+    return String(newest);
+  } catch {
+    return "0";
+  }
+}
+
 async function loadMarkdownPrompts(): Promise<PromptRecord[]> {
   await ensureDir();
   const files = await fs.readdir(PROMPTS_DIR);
@@ -96,15 +112,29 @@ async function loadMarkdownPrompts(): Promise<PromptRecord[]> {
 }
 
 export async function GET() {
-  const prompts = await loadMarkdownPrompts();
-  // Optional no-cache headers (your earlier step #3), but INSIDE the handler:
+  const [prompts, version] = await Promise.all([
+    loadMarkdownPrompts(),
+    computeVersion(),
+  ]);
+
   return new Response(JSON.stringify(prompts), {
     headers: {
       "Content-Type": "application/json",
       "Cache-Control": "no-store, max-age=0",
+      "x-prompts-version": version, // <-- lets the frontend know if anything changed
     },
   });
-  // (You could also just do:  return NextResponse.json(prompts)  — both are fine)
+}
+
+// Lightweight version check (no body)
+export async function HEAD() {
+  const version = await computeVersion();
+  return new Response(null, {
+    headers: {
+      "Cache-Control": "no-store, max-age=0",
+      "x-prompts-version": version,
+    },
+  });
 }
 
 export async function POST(req: Request) {
