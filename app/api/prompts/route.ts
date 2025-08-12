@@ -3,8 +3,15 @@ import fs from "fs/promises"
 import path from "path"
 import slugify from "slugify"
 import yaml from "js-yaml"
-export const runtime = "nodejs";          // ensures Node runtime (FS access)
-export const dynamic = "force-dynamic";   // don't pre-render/cached-return an empty list
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+return new NextResponse(JSON.stringify(prompts), {
+  headers: {
+    "Content-Type": "application/json",
+    "Cache-Control": "no-store, max-age=0",
+  },
+});
 
 // If you have a Zod schema, import it. Otherwise we’ll skip strict validation.
 // import { promptStructureSchema } from "@/lib/data/validator"
