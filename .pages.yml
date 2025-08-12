@@ -21,6 +21,9 @@ content:
       - { name: title,       label: Title,       type: string }
       - { name: description, label: Description, type: text, required: false }
 
+      # NEW field for your prompt template
+      - { name: template,    label: Template,    type: code, options: { language: markdown }, required: true }
+
       # Input variables (array of objects)
       - name: input_variables
         label: Input variables
@@ -40,11 +43,10 @@ content:
         items:
           type: string
 
-      # Timestamps & bookmark (optional)
+      # Timestamps & bookmark
       - { name: created_at,  label: Created at,  type: datetime, format: "YYYY-MM-DDTHH:mm:ss[Z]" }
       - { name: updated_at,  label: Updated at,  type: datetime, format: "YYYY-MM-DDTHH:mm:ss[Z]", required: false }
       - { name: bookmarked,  label: Bookmarked,  type: boolean, default: false }
 
       # Do NOT add a "body" field here.
       # The Markdown editor at the bottom is the body and becomes the template.
-
