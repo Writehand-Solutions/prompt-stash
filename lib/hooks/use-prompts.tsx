@@ -1,12 +1,3 @@
-/**
- * Prompt Management Global Local State
- *
- * - Initializes from /api/prompts
- * - Persists to localStorage
- * - Background refresh: HEAD /api/prompts every 60s
- *   If `x-prompts-version` changes, re-fetches prompts.
- */
-
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
@@ -126,9 +117,7 @@ export const promptsAtom = atomWithStorage<PromptStructure[]>("prompts", [], {
   subscribe: (key, cb) => {
     if (typeof window === "undefined") return () => {};
     const h = (e: StorageEvent) => {
-      if (e.key === key) {
-        cb(e.newValue ? JSON.parse(e.newValue) : []);
-      }
+      if (e.key === key) cb(e.newValue ? JSON.parse(e.newValue) : []);
     };
     window.addEventListener("storage", h);
     return () => window.removeEventListener("storage", h);
@@ -159,9 +148,7 @@ export const draftPromptsAtom = atomWithStorage<Record<string, PromptStructure>>
     subscribe: (key, cb) => {
       if (typeof window === "undefined") return () => {};
       const h = (e: StorageEvent) => {
-        if (e.key === key) {
-          cb(e.newValue ? JSON.parse(e.newValue) : {});
-        }
+        if (e.key === key) cb(e.newValue ? JSON.parse(e.newValue) : {});
       };
       window.addEventListener("storage", h);
       return () => window.removeEventListener("storage", h);
@@ -195,7 +182,7 @@ export const usePrompts = () => {
       setPrompts(data || []);
       if (ver) setServerVersion(ver);
     } catch {
-      // swallow
+      // ignore
     }
   }, [setPrompts, setServerVersion]);
 
@@ -231,13 +218,16 @@ export const usePrompts = () => {
       if (pollRef.current) return;
       pollRef.current = setInterval(async () => {
         try {
-          const res = await fetch("/api/prompts", { method: "HEAD", cache: "no-store" });
+          const res = await fetch("/api/prompts", {
+            method: "HEAD",
+            cache: "no-store",
+          });
           const ver = res.headers.get("x-prompts-version");
           if (ver && ver !== serverVersion) {
             await fetchPrompts(); // version changed → reload list
           }
         } catch {
-          // ignore network errors
+          // ignore
         }
       }, 60000);
     };
@@ -250,7 +240,6 @@ export const usePrompts = () => {
     };
 
     start();
-    // pause when tab is hidden to save resources
     const vis = () => {
       if (document.hidden) stop();
       else start();
@@ -273,20 +262,15 @@ export const usePrompts = () => {
         console.error("Failed to create prompt:", parsed.error);
         return;
       }
-
-      // Write to server so it persists in /prompts/*.md
       const res = await fetch("/api/prompts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(parsed.data),
       });
-
       if (!res.ok) {
         console.error("Failed to POST prompt");
         return;
       }
-
-      // Re-fetch canonical list (keeps sort order & IDs consistent)
       await fetchPrompts();
     },
     [fetchPrompts]
@@ -298,7 +282,6 @@ export const usePrompts = () => {
       if (config?.selected === id) {
         setConfig({ ...config, selected: null });
       }
-      // NOTE: if you also want to remove from filesystem, add a DELETE API later.
     },
     [prompts, setPrompts, config, setConfig]
   );
@@ -313,7 +296,18 @@ export const usePrompts = () => {
           return parsed.success ? parsed.data : p;
         })
       );
-      // NOTE: Persisting edits back to filesystem would need a PUT/PATCH API.
+    },
+    [prompts, setPrompts]
+  );
+
+  // ✅ restored so components that call `toggleLock` keep working
+  const toggleLock = useCallback(
+    (id: string) => {
+      setPrompts(
+        prompts.map((p) =>
+          p.id === id ? { ...p, locked: !p.locked } : p
+        )
+      );
     },
     [prompts, setPrompts]
   );
@@ -321,7 +315,9 @@ export const usePrompts = () => {
   const toggleBookmark = useCallback(
     (id: string) => {
       setPrompts(
-        prompts.map((p) => (p.id === id ? { ...p, bookmarked: !p.bookmarked } : p))
+        prompts.map((p) =>
+          p.id === id ? { ...p, bookmarked: !p.bookmarked } : p
+        )
       );
     },
     [prompts, setPrompts]
@@ -392,6 +388,7 @@ export const usePrompts = () => {
     createPrompt,
     deletePrompt,
     editPrompt,
+    toggleLock,       // ← back in the return
     toggleBookmark,
     draftPrompts,
     saveDraftPrompt,
