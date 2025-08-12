@@ -187,40 +187,57 @@ export const usePrompts = () => {
   const [config, setConfig] = useAtom(configAtom)
   const initializationRef = useRef(false)
 
-  // Initialize prompts on component mount
-  useEffect(() => {
-    const initializePrompts = () => {
-      console.log("Initializing prompts. Current config:", config)
-      console.log("Current prompts:", prompts)
+// Initialize prompts on first mount (always fetch once, no cache)
+useEffect(() => {
+  let cancelled = false;
 
-      if (config.shouldLoadDefaults && prompts.length === 0) {
-        console.log("Loading default prompts")
-        fetch("/api/prompts")
-        .then((res) => res.json())
-        .then(setPrompts)
-        setConfig({
-          ...config,
+  const load = async () => {
+    try {
+      console.log("Loading prompts from /api/prompts …");
+      const res = await fetch("/api/prompts", {
+        cache: "no-store",
+        next: { revalidate: 0 },
+        headers: { "x-no-cache": "1" },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      if (!cancelled) {
+        const list = Array.isArray(data) ? data : [];
+        setPrompts(list);
+
+        setConfig((c) => ({
+          ...c,
           isInitialized: true,
           firstRun: false,
           shouldLoadDefaults: false,
-        })
-      } else if (!config.isInitialized) {
-        console.log("Marking as initialized")
-        setConfig({
-          ...config,
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to load prompts:", err);
+      if (!cancelled) {
+        setConfig((c) => ({
+          ...c,
           isInitialized: true,
+          firstRun: false,
           shouldLoadDefaults: false,
-        })
-      } else {
-        console.log("Already initialized, no action needed")
+        }));
       }
     }
+  };
 
-    if (!initializationRef.current) {
-      initializePrompts()
-      initializationRef.current = true
-    }
-  }, [config, prompts, setPrompts, setConfig])
+  if (!initializationRef.current) {
+    initializationRef.current = true;
+    load();
+  }
+
+  return () => {
+    cancelled = true;
+  };
+// run once on mount
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+
 
   // Function to create a new prompt
   const createPrompt = useCallback(
@@ -378,19 +395,30 @@ export const usePrompts = () => {
   }, [setPrompts, setDraftPrompts, setConfig, config])
 
   // Function to restore default prompts
-  const restoreDefaultPrompts = useCallback(() => {
-     fetch("/api/prompts")
-    .then((res) => res.json())
-    .then(setPrompts)
-    setDraftPrompts({})
-    setConfig({
-      ...config,
-      isInitialized: true,
-      shouldLoadDefaults: false,
-      firstRun: false,
-    })
-    initializationRef.current = false // Reset initialization flag
-  }, [setPrompts, setDraftPrompts, setConfig, config])
+const restoreDefaultPrompts = useCallback(() => {
+  (async () => {
+    try {
+      const res = await fetch("/api/prompts", {
+        cache: "no-store",
+        next: { revalidate: 0 },
+        headers: { "x-no-cache": "1" },
+      });
+      const data = await res.json();
+      setPrompts(Array.isArray(data) ? data : []);
+      setDraftPrompts({});
+      setConfig((c) => ({
+        ...c,
+        isInitialized: true,
+        shouldLoadDefaults: false,
+        firstRun: false,
+      }));
+      initializationRef.current = true;
+    } catch (e) {
+      console.error("restoreDefaultPrompts failed:", e);
+    }
+  })();
+}, [setPrompts, setDraftPrompts, setConfig]);
+
 
   return {
     prompts,
