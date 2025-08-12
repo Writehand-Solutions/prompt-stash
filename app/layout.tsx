@@ -13,9 +13,9 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter_Tight({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Cult Prompt Stash",
+  title: "Prompt Builder & Library - Powered by Productised",
   description:
-    "A safe local first place to stash, test and improve your favorite prompts.",
+    "A safe local first place to test and improve your favorite prompts. Powered by Productised.ai",
 }
 
 export default function RootLayout({
