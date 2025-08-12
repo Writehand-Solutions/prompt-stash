@@ -6,16 +6,16 @@ content:
   - name: prompts
     label: Prompts
     type: collection
-    path: prompts              # folder in repo root
+    path: prompts               # folder in repo root
     create: true
     slug: "{{slug}}"
-    extension: md              # write .md files
-    format: frontmatter        # YAML front-matter + markdown body
+    extension: md               # write .md files
+    format: frontmatter         # YAML front-matter + markdown body
     view:
       fields: [title, locked]
 
     fields:
-      # ── front-matter fields ──
+      # --- front-matter fields ---
       - { name: id,          label: ID,          type: uuid }
       - { name: locked,      label: Locked,      type: boolean, default: false }
       - { name: title,       label: Title,       type: string }
@@ -33,18 +33,18 @@ content:
           - { name: required,            label: Required,            type: boolean, default: true }
           - { name: variable_validation, label: Validation regex,    type: string, required: false }
 
-      # Tags must be a list of strings (not objects)
+      # Tags = list of strings
       - name: tags
         label: Tags
         type: list
         items:
           type: string
 
-      # Timestamps & bookmark
-      - { name: created_at,  label: Created at,  type: datetime, format: "YYYY-MM-DDTHH:mm:ss.SSSZ" }
-      - { name: updated_at,  label: Updated at,  type: datetime, format: "YYYY-MM-DDTHH:mm:ss.SSSZ", required: false }
+      # Timestamps & bookmark (optional)
+      - { name: created_at,  label: Created at,  type: datetime, format: "YYYY-MM-DDTHH:mm:ss[Z]" }
+      - { name: updated_at,  label: Updated at,  type: datetime, format: "YYYY-MM-DDTHH:mm:ss[Z]", required: false }
       - { name: bookmarked,  label: Bookmarked,  type: boolean, default: false }
 
-      # ── markdown body becomes the prompt template ──
-      - { name: body, label: Template, type: markdown }
+      # Do NOT add a "body" field here.
+      # The Markdown editor at the bottom is the body and becomes the template.
 
