@@ -1,16 +1,12 @@
-media:
-  input: public/prompts-media
-  output: /prompts-media
-
 content:
   - name: prompts
     label: Prompts
     type: collection
-    path: prompts               # folder in repo root
+    path: prompts            # writes files into /prompts
     create: true
-    slug: "{{slug}}"
-    extension: md               # write .md files
-    format: frontmatter         # YAML front-matter + markdown body
+    slug: "{{slug}}"         # no date in filename
+    extension: md
+    format: frontmatter      # YAML frontmatter + (unused) body
     view:
       fields: [title, locked]
 
@@ -21,7 +17,7 @@ content:
       - { name: title,       label: Title,       type: string }
       - { name: description, label: Description, type: text, required: false }
 
-      # NEW field for your prompt template
+      # Template saved in front-matter (multi-line string)
       - { name: template,    label: Template,    type: code, options: { language: markdown }, required: true }
 
       # Input variables (array of objects)
@@ -40,13 +36,10 @@ content:
       - name: tags
         label: Tags
         type: list
-        items:
-          type: string
+        items: { type: string }
 
-      # Timestamps & bookmark
-      - { name: created_at,  label: Created at,  type: datetime, format: "YYYY-MM-DDTHH:mm:ss[Z]" }
-      - { name: updated_at,  label: Updated at,  type: datetime, format: "YYYY-MM-DDTHH:mm:ss[Z]", required: false }
-      - { name: bookmarked,  label: Bookmarked,  type: boolean, default: false }
+      # Optional metadata
+      - { name: created_at,  label: Created at, type: datetime, required: false }
+      - { name: updated_at,  label: Updated at, type: datetime, required: false }
+      - { name: bookmarked,  label: Bookmarked, type: boolean,  default: false }
 
-      # Do NOT add a "body" field here.
-      # The Markdown editor at the bottom is the body and becomes the template.
