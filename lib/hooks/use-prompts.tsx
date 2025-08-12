@@ -1,52 +1,40 @@
 /**
  * Prompt Management Global Local State
  *
- * This module provides a comprehensive system for managing prompts in a React application.
- * It uses Jotai for state management and localStorage for persistence.
- *
- * Key features:
- * 1. Config management: Handles initialization status, default prompt loading, and selected prompt.
- * 2. Prompt storage: Stores prompts and draft prompts in localStorage.
- * 3. CRUD operations: Provides functions to create, read, update, and delete prompts.
- * 4. Initialization: Automatically loads default prompts if needed and handles first-run scenarios.
- * 5. Draft management: Allows saving and managing draft versions of prompts.
- *
- * The module uses a custom hook (usePrompts) that encapsulates all prompt-related functionality.
- * It also provides separate atoms and hooks for more granular control over prompt editing and deletion.
- *
- * The configuration and prompts are stored in localStorage and are loaded on initialization.
- * This allows the prompt state to persist across page reloads and browser sessions.
+ * - Initializes from /api/prompts
+ * - Persists to localStorage
+ * - Background refresh: HEAD /api/prompts every 60s
+ *   If `x-prompts-version` changes, re-fetches prompts.
  */
 
-"use client"
+"use client";
 
-import { useCallback, useEffect, useRef } from "react"
-import { atom, useAtom } from "jotai"
-import { atomWithStorage } from "jotai/utils"
-import { z } from "zod"
+import { useCallback, useEffect, useRef } from "react";
+import { atom, useAtom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
+import { z } from "zod";
 
 import {
   PromptStructure,
   promptStructureSchema,
-} from "@/lib/data/validator"
+} from "@/lib/data/validator";
 
-// Type definitions for the configuration
+/* -------------------- types & config -------------------- */
+
 type Config = {
-  selected: PromptStructure["id"] | null
-  isInitialized: boolean
-  shouldLoadDefaults: boolean
-  firstRun: boolean
-}
+  selected: PromptStructure["id"] | null;
+  isInitialized: boolean;
+  shouldLoadDefaults: boolean;
+  firstRun: boolean;
+};
 
-// Define the config schema
 const configSchema = z.object({
   selected: z.string().nullable(),
   isInitialized: z.boolean(),
   shouldLoadDefaults: z.boolean(),
   firstRun: z.boolean(),
-})
+});
 
-// Helper function to get the initial config
 const getInitialConfig = (): Config => {
   if (typeof window === "undefined") {
     return {
@@ -54,377 +42,355 @@ const getInitialConfig = (): Config => {
       isInitialized: false,
       shouldLoadDefaults: true,
       firstRun: true,
-    }
+    };
   }
-
-  const storedConfig = localStorage.getItem("promptConfig")
-  if (storedConfig) {
-    const result = configSchema.safeParse(JSON.parse(storedConfig))
+  try {
+    const raw = localStorage.getItem("promptConfig");
+    if (!raw) {
+      return {
+        selected: null,
+        isInitialized: false,
+        shouldLoadDefaults: true,
+        firstRun: true,
+      };
+    }
+    const parsed = JSON.parse(raw);
+    const result = configSchema.safeParse(parsed);
     if (result.success) {
       return {
         selected: result.data.selected ?? null,
         isInitialized: result.data.isInitialized ?? false,
         shouldLoadDefaults: result.data.shouldLoadDefaults ?? true,
         firstRun: result.data.firstRun ?? true,
-      }
+      };
     }
-    console.error("Failed to parse stored config:", result.error)
-  }
+  } catch {}
   return {
     selected: null,
     isInitialized: false,
     shouldLoadDefaults: true,
     firstRun: true,
-  }
-}
+  };
+};
 
-// Define atoms for config, draft prompts, and prompts using atomWithStorage
+/* -------------------- atoms -------------------- */
+
 const configAtom = atomWithStorage<Config>("promptConfig", getInitialConfig(), {
   getItem: (key) => {
-    if (typeof window === "undefined") {
-      return getInitialConfig()
+    if (typeof window === "undefined") return getInitialConfig();
+    const v = localStorage.getItem(key);
+    try {
+      return v ? JSON.parse(v) : getInitialConfig();
+    } catch {
+      return getInitialConfig();
     }
-    const storedValue = localStorage.getItem(key)
-    return storedValue ? JSON.parse(storedValue) : getInitialConfig()
   },
   setItem: (key, value) => {
     if (typeof window !== "undefined") {
-      localStorage.setItem(key, JSON.stringify(value))
+      localStorage.setItem(key, JSON.stringify(value));
     }
   },
   removeItem: (key) => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(key)
-    }
+    if (typeof window !== "undefined") localStorage.removeItem(key);
   },
-  subscribe: (key, callback) => {
-    if (typeof window === "undefined") return () => {}
-    const handler = (e: StorageEvent) => {
+  subscribe: (key, cb) => {
+    if (typeof window === "undefined") return () => {};
+    const h = (e: StorageEvent) => {
       if (e.key === key) {
-        callback(e.newValue ? JSON.parse(e.newValue) : getInitialConfig())
+        cb(e.newValue ? JSON.parse(e.newValue) : getInitialConfig());
       }
-    }
-    window.addEventListener("storage", handler)
-    return () => window.removeEventListener("storage", handler)
+    };
+    window.addEventListener("storage", h);
+    return () => window.removeEventListener("storage", h);
   },
-})
+});
 
 export const promptsAtom = atomWithStorage<PromptStructure[]>("prompts", [], {
   getItem: (key) => {
-    if (typeof window === "undefined") {
-      return []
+    if (typeof window === "undefined") return [];
+    const v = localStorage.getItem(key);
+    try {
+      return v ? JSON.parse(v) : [];
+    } catch {
+      return [];
     }
-    const storedValue = localStorage.getItem(key)
-    return storedValue ? JSON.parse(storedValue) : []
   },
   setItem: (key, value) => {
     if (typeof window !== "undefined") {
-      localStorage.setItem(key, JSON.stringify(value))
+      localStorage.setItem(key, JSON.stringify(value));
     }
   },
   removeItem: (key) => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(key)
-    }
+    if (typeof window !== "undefined") localStorage.removeItem(key);
   },
-  subscribe: (key, callback) => {
-    if (typeof window === "undefined") return () => {}
-    const handler = (e: StorageEvent) => {
+  subscribe: (key, cb) => {
+    if (typeof window === "undefined") return () => {};
+    const h = (e: StorageEvent) => {
       if (e.key === key) {
-        callback(e.newValue ? JSON.parse(e.newValue) : [])
+        cb(e.newValue ? JSON.parse(e.newValue) : []);
       }
-    }
-    window.addEventListener("storage", handler)
-    return () => window.removeEventListener("storage", handler)
+    };
+    window.addEventListener("storage", h);
+    return () => window.removeEventListener("storage", h);
   },
-})
+});
 
-export const draftPromptsAtom = atomWithStorage<
-  Record<string, PromptStructure>
->(
+export const draftPromptsAtom = atomWithStorage<Record<string, PromptStructure>>(
   "draftPrompts",
   {},
   {
     getItem: (key) => {
-      if (typeof window === "undefined") {
-        return {}
+      if (typeof window === "undefined") return {};
+      const v = localStorage.getItem(key);
+      try {
+        return v ? JSON.parse(v) : {};
+      } catch {
+        return {};
       }
-      const storedValue = localStorage.getItem(key)
-      return storedValue ? JSON.parse(storedValue) : {}
     },
     setItem: (key, value) => {
       if (typeof window !== "undefined") {
-        localStorage.setItem(key, JSON.stringify(value))
+        localStorage.setItem(key, JSON.stringify(value));
       }
     },
     removeItem: (key) => {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem(key)
-      }
+      if (typeof window !== "undefined") localStorage.removeItem(key);
     },
-    subscribe: (key, callback) => {
-      if (typeof window === "undefined") return () => {}
-      const handler = (e: StorageEvent) => {
+    subscribe: (key, cb) => {
+      if (typeof window === "undefined") return () => {};
+      const h = (e: StorageEvent) => {
         if (e.key === key) {
-          callback(e.newValue ? JSON.parse(e.newValue) : {})
+          cb(e.newValue ? JSON.parse(e.newValue) : {});
         }
-      }
-      window.addEventListener("storage", handler)
-      return () => window.removeEventListener("storage", handler)
+      };
+      window.addEventListener("storage", h);
+      return () => window.removeEventListener("storage", h);
     },
   }
-)
+);
 
-// Use the configAtom in your components
+// in-memory only: last known version from server
+const versionAtom = atom<string | null>(null);
+
+/* -------------------- public hooks -------------------- */
+
 export function usePrompt() {
-  return useAtom(configAtom)
+  return useAtom(configAtom);
 }
 
-// Custom hook to manage prompts
 export const usePrompts = () => {
-  const [prompts, setPrompts] = useAtom(promptsAtom)
-  const [draftPrompts, setDraftPrompts] = useAtom(draftPromptsAtom)
-  const [config, setConfig] = useAtom(configAtom)
-  const initializationRef = useRef(false)
+  const [prompts, setPrompts] = useAtom(promptsAtom);
+  const [draftPrompts, setDraftPrompts] = useAtom(draftPromptsAtom);
+  const [config, setConfig] = useAtom(configAtom);
+  const [serverVersion, setServerVersion] = useAtom(versionAtom);
 
-// Initialize prompts on first mount (always fetch once, no cache)
-useEffect(() => {
-  let cancelled = false;
+  const initRef = useRef(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const load = async () => {
+  const fetchPrompts = useCallback(async () => {
+    const res = await fetch("/api/prompts", { cache: "no-store" });
+    const ver = res.headers.get("x-prompts-version") ?? null;
     try {
-      console.log("Loading prompts from /api/prompts …");
-      const res = await fetch("/api/prompts", {
-        cache: "no-store",
-        next: { revalidate: 0 },
-        headers: { "x-no-cache": "1" },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-
-      if (!cancelled) {
-        const list = Array.isArray(data) ? data : [];
-        setPrompts(list);
-
-        setConfig((c) => ({
-          ...c,
-          isInitialized: true,
-          firstRun: false,
-          shouldLoadDefaults: false,
-        }));
-      }
-    } catch (err) {
-      console.error("Failed to load prompts:", err);
-      if (!cancelled) {
-        setConfig((c) => ({
-          ...c,
-          isInitialized: true,
-          firstRun: false,
-          shouldLoadDefaults: false,
-        }));
-      }
+      const data = (await res.json()) as PromptStructure[];
+      setPrompts(data || []);
+      if (ver) setServerVersion(ver);
+    } catch {
+      // swallow
     }
-  };
+  }, [setPrompts, setServerVersion]);
 
-  if (!initializationRef.current) {
-    initializationRef.current = true;
-    load();
-  }
+  // Initial load
+  useEffect(() => {
+    const initialize = async () => {
+      if (config.shouldLoadDefaults && prompts.length === 0) {
+        await fetchPrompts();
+        setConfig({
+          ...config,
+          isInitialized: true,
+          shouldLoadDefaults: false,
+          firstRun: false,
+        });
+      } else if (!config.isInitialized) {
+        setConfig({
+          ...config,
+          isInitialized: true,
+          shouldLoadDefaults: false,
+        });
+      }
+    };
 
-  return () => {
-    cancelled = true;
-  };
-// run once on mount
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
+    if (!initRef.current) {
+      initialize();
+      initRef.current = true;
+    }
+  }, [config, prompts.length, fetchPrompts, setConfig]);
 
+  // Background version polling (every 60s)
+  useEffect(() => {
+    const start = () => {
+      if (pollRef.current) return;
+      pollRef.current = setInterval(async () => {
+        try {
+          const res = await fetch("/api/prompts", { method: "HEAD", cache: "no-store" });
+          const ver = res.headers.get("x-prompts-version");
+          if (ver && ver !== serverVersion) {
+            await fetchPrompts(); // version changed → reload list
+          }
+        } catch {
+          // ignore network errors
+        }
+      }, 60000);
+    };
 
-  // Function to create a new prompt
+    const stop = () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+
+    start();
+    // pause when tab is hidden to save resources
+    const vis = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+    document.addEventListener("visibilitychange", vis);
+
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", vis);
+    };
+  }, [serverVersion, fetchPrompts]);
+
+  /* --------------- CRUD helpers --------------- */
+
   const createPrompt = useCallback(
     async (prompt: Omit<PromptStructure, "id">) => {
-      const newPrompt = { ...prompt, id: generateUniqueId() }
-      const validationResult = promptStructureSchema.safeParse(newPrompt)
-
-      if (validationResult.success) {
-          const response = await fetch("/api/prompts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(validationResult.data || newPrompt),
-    });
-        setPrompts([...prompts, validationResult.data])
-      } else {
-        console.error(
-          "Failed to create prompt: Invalid prompt structure",
-          validationResult.error
-        )
-        // You might want to handle this error in your UI as well
+      const candidate = { ...prompt, id: generateUniqueId() };
+      const parsed = promptStructureSchema.safeParse(candidate);
+      if (!parsed.success) {
+        console.error("Failed to create prompt:", parsed.error);
+        return;
       }
-    },
-    [prompts, setPrompts]
-  )
 
-  // Function to delete a prompt
+      // Write to server so it persists in /prompts/*.md
+      const res = await fetch("/api/prompts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(parsed.data),
+      });
+
+      if (!res.ok) {
+        console.error("Failed to POST prompt");
+        return;
+      }
+
+      // Re-fetch canonical list (keeps sort order & IDs consistent)
+      await fetchPrompts();
+    },
+    [fetchPrompts]
+  );
+
   const deletePrompt = useCallback(
     (id: string) => {
-      setPrompts(prompts.filter((prompt) => prompt.id !== id))
+      setPrompts(prompts.filter((p) => p.id !== id));
       if (config?.selected === id) {
-        setConfig({ ...config, selected: null })
+        setConfig({ ...config, selected: null });
       }
+      // NOTE: if you also want to remove from filesystem, add a DELETE API later.
     },
     [prompts, setPrompts, config, setConfig]
-  )
+  );
 
-  // Function to edit a prompt
   const editPrompt = useCallback(
-    (id: string, updatedPrompt: Partial<PromptStructure>) => {
+    (id: string, updated: Partial<PromptStructure>) => {
       setPrompts(
-        prompts.map((prompt) => {
-          if (prompt.id === id) {
-            const updatedFullPrompt = { ...prompt, ...updatedPrompt }
-            const validationResult =
-              promptStructureSchema.safeParse(updatedFullPrompt)
-
-            if (validationResult.success) {
-              return validationResult.data
-            } else {
-              console.error(
-                "Failed to update prompt: Invalid prompt structure",
-                validationResult.error
-              )
-              return prompt // Keep the original prompt if validation fails
-            }
-          }
-          return prompt
+        prompts.map((p) => {
+          if (p.id !== id) return p;
+          const next = { ...p, ...updated };
+          const parsed = promptStructureSchema.safeParse(next);
+          return parsed.success ? parsed.data : p;
         })
-      )
+      );
+      // NOTE: Persisting edits back to filesystem would need a PUT/PATCH API.
     },
     [prompts, setPrompts]
-  )
+  );
 
-  // Function to toggle bookmark status
   const toggleBookmark = useCallback(
     (id: string) => {
       setPrompts(
-        prompts.map((prompt) =>
-          prompt.id === id
-            ? { ...prompt, bookmarked: !prompt.bookmarked }
-            : prompt
-        )
-      )
+        prompts.map((p) => (p.id === id ? { ...p, bookmarked: !p.bookmarked } : p))
+      );
     },
     [prompts, setPrompts]
-  )
+  );
 
-  // Function to save a draft prompt
   const saveDraftPrompt = useCallback(
-    (id: string, draftPrompt: PromptStructure) => {
-      const validationResult = promptStructureSchema.safeParse(draftPrompt)
-
-      if (validationResult.success) {
-        setDraftPrompts({
-          ...draftPrompts,
-          [id]: validationResult.data,
-        })
+    (id: string, draft: PromptStructure) => {
+      const parsed = promptStructureSchema.safeParse(draft);
+      if (parsed.success) {
+        setDraftPrompts({ ...draftPrompts, [id]: parsed.data });
       } else {
-        console.error(
-          "Failed to save draft prompt: Invalid prompt structure",
-          validationResult.error
-        )
-        // You might want to handle this error in your UI as well
+        console.error("Invalid draft:", parsed.error);
       }
     },
     [draftPrompts, setDraftPrompts]
-  )
+  );
 
-  // Function to delete a draft prompt
   const deleteDraftPrompt = useCallback(
     (id: string) => {
-      const { [id]: _, ...rest } = draftPrompts
-      setDraftPrompts(rest)
+      const { [id]: _omit, ...rest } = draftPrompts;
+      setDraftPrompts(rest);
     },
     [draftPrompts, setDraftPrompts]
-  )
+  );
 
-  // Function to toggle lock status
-  const toggleLock = useCallback(
-    (id: string) => {
-      setPrompts(
-        prompts.map((prompt) =>
-          prompt.id === id ? { ...prompt, locked: !prompt.locked } : prompt
-        )
-      )
-    },
-    [prompts, setPrompts]
-  )
-
-  // Function to save a draft as a final prompt
   const saveDraftAsFinalPrompt = useCallback(
     (id: string) => {
-      const draftPrompt = draftPrompts[id]
-      if (draftPrompt) {
-        const validationResult = promptStructureSchema.safeParse(draftPrompt)
-
-        if (validationResult.success) {
-          editPrompt(id, validationResult.data)
-          deleteDraftPrompt(id)
-        } else {
-          console.error(
-            "Failed to save draft as final prompt: Invalid prompt structure",
-            validationResult.error
-          )
-          // You might want to handle this error in your UI as well
-        }
+      const draft = draftPrompts[id];
+      if (!draft) return;
+      const parsed = promptStructureSchema.safeParse(draft);
+      if (!parsed.success) {
+        console.error("Invalid draft:", parsed.error);
+        return;
       }
+      editPrompt(id, parsed.data);
+      deleteDraftPrompt(id);
     },
     [draftPrompts, editPrompt, deleteDraftPrompt]
-  )
+  );
 
-  // Function to delete all prompts
   const deleteAllPrompts = useCallback(() => {
-    console.log("Deleting all prompts")
-    setPrompts([])
-    setDraftPrompts({})
+    setPrompts([]);
+    setDraftPrompts({});
     setConfig({
       ...config,
       selected: null,
       isInitialized: true,
       shouldLoadDefaults: false,
       firstRun: false,
-    })
-    initializationRef.current = false // Reset initialization flag
-  }, [setPrompts, setDraftPrompts, setConfig, config])
+    });
+    initRef.current = false;
+  }, [setPrompts, setDraftPrompts, setConfig, config]);
 
-  // Function to restore default prompts
-const restoreDefaultPrompts = useCallback(() => {
-  (async () => {
-    try {
-      const res = await fetch("/api/prompts", {
-        cache: "no-store",
-        next: { revalidate: 0 },
-        headers: { "x-no-cache": "1" },
-      });
-      const data = await res.json();
-      setPrompts(Array.isArray(data) ? data : []);
-      setDraftPrompts({});
-      setConfig((c) => ({
-        ...c,
-        isInitialized: true,
-        shouldLoadDefaults: false,
-        firstRun: false,
-      }));
-      initializationRef.current = true;
-    } catch (e) {
-      console.error("restoreDefaultPrompts failed:", e);
-    }
-  })();
-}, [setPrompts, setDraftPrompts, setConfig]);
-
+  const restoreDefaultPrompts = useCallback(async () => {
+    await fetchPrompts();
+    setDraftPrompts({});
+    setConfig({
+      ...config,
+      isInitialized: true,
+      shouldLoadDefaults: false,
+      firstRun: false,
+    });
+    initRef.current = false;
+  }, [fetchPrompts, setDraftPrompts, setConfig, config]);
 
   return {
     prompts,
     createPrompt,
     deletePrompt,
-    toggleLock,
     editPrompt,
     toggleBookmark,
     draftPrompts,
@@ -433,72 +399,53 @@ const restoreDefaultPrompts = useCallback(() => {
     saveDraftAsFinalPrompt,
     deleteAllPrompts,
     restoreDefaultPrompts,
-  }
-}
+  };
+};
 
-// Generate a unique ID
-const generateUniqueId = () => {
-  return Math.random().toString(36).substr(2, 9)
-}
+/* -------------------- helpers -------------------- */
 
-// Refactored editPromptAtom
+const generateUniqueId = () => Math.random().toString(36).slice(2, 11);
+
+/* ------- edit/delete atoms (unchanged external API) ------- */
+
 export const editPromptAtom = atom(
   null,
   (
     get,
     set,
-    {
-      id,
-      updatedPrompt,
-    }: { id: string; updatedPrompt: Partial<PromptStructure> }
+    { id, updatedPrompt }: { id: string; updatedPrompt: Partial<PromptStructure> }
   ) => {
-    const prompts = get(promptsAtom)
+    const prompts = get(promptsAtom);
     set(
       promptsAtom,
-      prompts.map((prompt) => {
-        if (prompt.id === id) {
-          const updatedFullPrompt = { ...prompt, ...updatedPrompt }
-          const validationResult =
-            promptStructureSchema.safeParse(updatedFullPrompt)
-
-          if (validationResult.success) {
-            return validationResult.data
-          } else {
-            console.error(
-              "Failed to update prompt: Invalid prompt structure",
-              validationResult.error
-            )
-            return prompt // Keep the original prompt if validation fails
-          }
-        }
-        return prompt
+      prompts.map((p) => {
+        if (p.id !== id) return p;
+        const next = { ...p, ...updatedPrompt };
+        const parsed = promptStructureSchema.safeParse(next);
+        return parsed.success ? parsed.data : p;
       })
-    )
+    );
   }
-)
+);
 
-// Refactored deletePromptAtom
 export const deletePromptAtom = atom(null, (get, set, id: string) => {
-  const prompts = get(promptsAtom)
+  const prompts = get(promptsAtom);
   set(
     promptsAtom,
-    prompts.filter((prompt) => prompt.id !== id)
-  )
-
-  const config = get(configAtom)
-  if (config?.selected === id) {
-    set(configAtom, { ...config, selected: null })
+    prompts.filter((p) => p.id !== id)
+  );
+  const cfg = get(configAtom);
+  if (cfg?.selected === id) {
+    set(configAtom, { ...cfg, selected: null });
   }
-})
+});
 
-// Custom hook to use editPromptAtom
 export function useEditPrompt() {
-  const [, editPrompt] = useAtom(editPromptAtom)
-  return editPrompt
+  const [, editPrompt] = useAtom(editPromptAtom);
+  return editPrompt;
 }
 
-// Custom hook to use deletePromptAtom
 export function useDeletePrompt() {
-  const [, deletePrompt] = useAtom(deletePromptAtom)
-  return deletePrompt
+  const [, deletePrompt] = useAtom(deletePromptAtom);
+  return deletePrompt;
 }
