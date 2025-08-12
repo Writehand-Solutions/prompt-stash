@@ -50,16 +50,19 @@ const formSchema = z.object({
     .min(1, "Description is required")
     .max(500, "Description must be 500 characters or less"),
   template: z.string().min(1, "Template is required"),
+  // tags is a free-form field in the UI (string), we normalize to array on submit
   tags: z.any(),
-  input_variables: z.array(
-    z.object({
-      name: z.string(),
-      description: z.string(),
-      type: z.string(),
-      required: z.boolean(),
-      variable_validation:z.string()
-    })
-  ).optional()
+  input_variables: z
+    .array(
+      z.object({
+        name: z.string(),
+        description: z.string(),
+        type: z.string(),
+        required: z.boolean(),
+        variable_validation: z.string(),
+      })
+    )
+    .optional(),
 })
 
 type FormSchema = z.infer<typeof formSchema>
@@ -78,17 +81,25 @@ export function NewPromptForm() {
       title: "",
       description: "",
       template: "",
-      tags: [],
+      // IMPORTANT: use a string here so the <Input> works
+      tags: "",
+      input_variables: [],
     },
   })
 
   async function onSubmit(data: FormSchema) {
-     const tagsArray = data.tags
-    ? data.tags.split(",").map((tag: string) => tag.trim()).filter(Boolean)
-    : [];
+    // Normalize tags to an array
+    const tagsArray = Array.isArray(data.tags)
+      ? data.tags
+      : String(data.tags || "")
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean)
+
+    // Ensure input variables is always an array
     const inputVarsArray = Array.isArray(data.input_variables)
-    ? data.input_variables
-    : [];
+      ? data.input_variables
+      : []
 
     const promptData: Partial<PromptStructure> = {
       ...data,
@@ -101,10 +112,18 @@ export function NewPromptForm() {
       locked: false,
       creator: currentUser,
     }
+
     try {
       await createPrompt(promptData as PromptStructure)
       toast.success("Prompt created successfully")
-      form.reset()
+      // Reset to clean defaults
+      form.reset({
+        title: "",
+        description: "",
+        template: "",
+        tags: "",
+        input_variables: [],
+      })
     } catch (error) {
       toast.error("Failed to create prompt")
     }
@@ -121,8 +140,30 @@ export function NewPromptForm() {
         settings.USER_OPEN_AI_API_KEY,
         promptType
       )
+
       if (result.success && result.data) {
-        form.reset(result.data)
+        const generated = result.data as Partial<PromptStructure> & {
+          tags?: string[] | string
+        }
+
+        // Convert tags to a string for the form input
+        const tagsString = Array.isArray(generated.tags)
+          ? generated.tags.join(", ")
+          : String(generated.tags || "")
+
+        // Ensure input_variables is an array for the form
+        const inputVarsArray = Array.isArray(generated.input_variables)
+          ? generated.input_variables
+          : []
+
+        form.reset({
+          title: generated.title || "",
+          description: generated.description || "",
+          template: generated.template || "",
+          tags: tagsString,
+          input_variables: inputVarsArray,
+        })
+
         toast.success("Prompt generated successfully")
       } else {
         throw new Error(result.error || "Failed to generate prompt")
@@ -138,32 +179,36 @@ export function NewPromptForm() {
     }
   }
 
-  const handleVariablesGenerated = (variables: Array<{ name: string; description: string; type: string }>) => {
-  // Merge new variables into existing ones
-  const existingVars = form.getValues("input_variables") || [];
-  const mergedVariables = [
-    ...existingVars,
-    ...variables.map(v => ({
-      ...v,
-      required: true,
-      variable_validation: "^.+$"
-    }))
-  ];
+  const handleVariablesGenerated = (
+    variables: Array<{ name: string; description: string; type: string }>
+  ) => {
+    // Merge with existing (guard if undefined)
+    const existingVars = Array.isArray(form.getValues("input_variables"))
+      ? form.getValues("input_variables")
+      : []
 
-  // Save back to form
-  form.setValue("input_variables", mergedVariables);
+    const mergedVariables = [
+      ...existingVars,
+      ...variables.map((v) => ({
+        ...v,
+        required: true,
+        variable_validation: "^.+$",
+      })),
+    ]
 
-  // Always rebuild the variables section in the template
-  const variablePlaceholders = mergedVariables
-    .map(v => `{${v.name}}`)
-    .join(" ");
+    // Save back to form
+    form.setValue("input_variables", mergedVariables)
 
-  const newTemplate = `Use the following variables in your response:\n${variablePlaceholders}`;
-  form.setValue("template", newTemplate);
+    // Always rebuild the variables section in the template
+    const variablePlaceholders = mergedVariables
+      .map((v) => `{${v.name}}`)
+      .join(" ")
 
-  toast.success(`${variables.length} variables added to your prompt`);
-};
+    const newTemplate = `Use the following variables in your response:\n${variablePlaceholders}`
+    form.setValue("template", newTemplate)
 
+    toast.success(`${variables.length} variables added to your prompt`)
+  }
 
   return (
     <Card className="w-full max-w-3xl mx-auto h-[1000px] rounded-2xl">
@@ -172,8 +217,8 @@ export function NewPromptForm() {
           <div className="flex flex-col">
             <CardTitle>Manual or Generate</CardTitle>
             <CardDescription>
-              Fill out the form below or generate a prompt using AI. <br />{" "}
-              (zero shot, few shot, or chain of thought, etc)
+              Fill out the form below or generate a prompt using AI. <br /> (zero
+              shot, few shot, or chain of thought, etc)
             </CardDescription>
           </div>
 
@@ -196,6 +241,7 @@ export function NewPromptForm() {
           </Button>
         </div>
       </CardHeader>
+
       <CardContent className="pb-8">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -247,7 +293,7 @@ export function NewPromptForm() {
                       <FormControl>
                         <TextArea
                           placeholder="Add your prompt template here"
-                          className="resize-none  p-1 flex min-h-[80px] w-full rounded-md border border-black/10 dark:border-white/10 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="resize-none p-1 flex min-h-[80px] w-full rounded-md border border-black/10 dark:border-white/10 bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                           minRows={5}
                           {...field}
                         />
@@ -292,6 +338,7 @@ export function NewPromptForm() {
             </ScrollArea>
           </form>
         </Form>
+
         <div className="pt-4">
           <Button
             type="submit"
