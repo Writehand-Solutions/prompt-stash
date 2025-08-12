@@ -1,62 +1,103 @@
+// Make this API run on Node and always read fresh from disk
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-import fs from 'fs';
-import path from 'path';
-import matter from 'gray-matter';
 import { NextResponse } from 'next/server';
+import { loadMarkdownPrompts } from '@/lib/server/loadMarkdownPrompts';
+import { promptStructureSchema } from '@/lib/data/validator';
 
-// Minimal type for the UI
-type PromptDoc = {
-  id: string;
-  locked?: boolean;
-  title: string;
-  description: string;
-  tags?: string[];
-  input_variables?: any[];
-  examples?: any[];
-  created_at?: string;
-  updated_at?: string | null;
-  bookmarked?: boolean;
-  template: string;
-  slug: string;
-};
+import fs from 'fs/promises';
+import path from 'path';
+import slugify from 'slugify';
+import yaml from 'js-yaml';
 
-function readAllMarkdownPrompts(): PromptDoc[] {
-  const dir = path.join(process.cwd(), 'prompts');
-  if (!fs.existsSync(dir)) return [];
+/** Normalize any loader output so the UI never crashes on missing fields */
+function normalizePrompt(p: any) {
+  return {
+    id: p.id,
+    locked: Boolean(p.locked),
+    title: String(p.title || ''),
+    description: String(p.description || ''),
+    tags: Array.isArray(p.tags) ? p.tags : [],
+    input_variables: Array.isArray(p.input_variables) ? p.input_variables : [],
+    examples: Array.isArray(p.examples) ? p.examples : [],
+    created_at: p.created_at ?? new Date().toISOString(),
+    updated_at: p.updated_at ?? null,
+    bookmarked: Boolean(p.bookmarked),
+    template: (p.template ?? '').toString(),
+    // keep anything else the UI might expect
+  };
+}
 
-  const files = fs.readdirSync(dir).filter(f => f.toLowerCase().endsWith('.md'));
-  const docs: PromptDoc[] = [];
+/** GET: return every .md prompt from /prompts as JSON */
+export async function GET() {
+  try {
+    const items = await loadMarkdownPrompts(); // already reads /prompts/*.md
+    const prompts = items.map(normalizePrompt);
+    return NextResponse.json(prompts);
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: 'Failed to load prompts', detail: String(err?.message || err) },
+      { status: 500 }
+    );
+  }
+}
 
-  for (const filename of files) {
-    const filePath = path.join(dir, filename);
-    const raw = fs.readFileSync(filePath, 'utf8');
+/** POST: save a new prompt as /prompts/<slug>.md (used by “New prompt” in UI) */
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
 
-    const { data, content } = matter(raw); // reads YAML frontmatter + body
-    const front = data as any;
+    // Coerce arrays so validation passes even if client sent strings
+    const prompt = {
+      ...body,
+      tags: Array.isArray(body.tags)
+        ? body.tags
+        : String(body.tags || '')
+            .split(',')
+            .map((t: string) => t.trim())
+            .filter(Boolean),
+      input_variables: Array.isArray(body.input_variables) ? body.input_variables : [],
+      examples: Array.isArray(body.examples) ? body.examples : [],
+      created_at: body.created_at ?? new Date().toISOString(),
+      updated_at: body.updated_at ?? null,
+      bookmarked: Boolean(body.bookmarked),
+      locked: Boolean(body.locked),
+      template: body.template ?? '',
+    };
 
-    // Basic guardrails so a single bad file doesn't crash the list
-    if (!front || !front.id || !front.title || !front.description) {
-      continue;
+    // Validate against your zod schema
+    const validation = promptStructureSchema.safeParse(prompt);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Invalid prompt structure', issues: validation.error.issues },
+        { status: 400 }
+      );
     }
 
-    docs.push({
-      ...front,
-      template: (content || '').trim(),
-      slug: filename.replace(/\.md$/i, ''),
+    // Build safe filename from title
+    const slug = slugify(prompt.title, {
+      lower: true,
+      strict: true,
+      remove: /[*+~.()'"!:@]/g,
     });
+
+    // Separate frontmatter & template body
+    const { template, ...frontmatter } = prompt;
+
+    // YAML frontmatter (avoid line wrapping to keep regex intact)
+    const fm = yaml.dump(frontmatter, { lineWidth: -1, noRefs: true });
+    const md = `---\n${fm}---\n${template ? String(template).trim() + '\n' : ''}`;
+
+    const filePath = path.join(process.cwd(), 'prompts', `${slug}.md`);
+    await fs.writeFile(filePath, md, 'utf8');
+
+    return NextResponse.json({ success: true, slug }, { status: 201 });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: 'Failed to save prompt', detail: String(err?.message || err) },
+      { status: 500 }
+    );
   }
-  return docs;
-}
-
-export async function GET() {
-  const prompts = readAllMarkdownPrompts();
-  return NextResponse.json(prompts);
-}
-
-// Keep POST working (optional). It just echoes 405 for now to be safe.
-// If you were using POST to save prompts from the UI, we can wire it back later.
-export async function POST() {
-  return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
 }
