@@ -1,45 +1,48 @@
+media:
+  input: public/prompts-media
+  output: /prompts-media
+
 content:
   - name: prompts
     label: Prompts
     type: collection
-    path: prompts            # writes files into /prompts
+    path: prompts                # writes to /prompts in repo root
     create: true
-    slug: "{{slug}}"         # no date in filename
-    extension: md
-    format: frontmatter      # YAML frontmatter + (unused) body
+    slug: "{{ title | slugify }}" # filename = title, no date prefix
+    extension: md                # .md files
+    format: frontmatter          # YAML front-matter + markdown body
     view:
       fields: [title, locked]
 
     fields:
-      # --- front-matter fields ---
+      # front-matter
       - { name: id,          label: ID,          type: uuid }
       - { name: locked,      label: Locked,      type: boolean, default: false }
       - { name: title,       label: Title,       type: string }
       - { name: description, label: Description, type: text, required: false }
 
-      # Template saved in front-matter (multi-line string)
-      - { name: template,    label: Template,    type: code, options: { language: markdown }, required: true }
-
-      # Input variables (array of objects)
+      # input variables (array of objects)
       - name: input_variables
         label: Input variables
         type: list
         fields:
           - { name: name,                label: Name,                type: string }
           - { name: description,         label: Description,         type: string }
-          - { name: type,                label: Type,                type: select,
-              options: ["string","integer","number","boolean","json"] }
+          - { name: type,                label: Type,                type: select, options: ["string","integer","number","boolean","json"] }
           - { name: required,            label: Required,            type: boolean, default: true }
           - { name: variable_validation, label: Validation regex,    type: string, required: false }
 
-      # Tags = list of strings
+      # tags must be list of strings
       - name: tags
         label: Tags
         type: list
-        items: { type: string }
+        items:
+          type: string
 
-      # Optional metadata
-      - { name: created_at,  label: Created at, type: datetime, required: false }
-      - { name: updated_at,  label: Updated at, type: datetime, required: false }
-      - { name: bookmarked,  label: Bookmarked, type: boolean,  default: false }
+      # (optional) timestamps/bookmark
+      - { name: created_at,  label: Created at,  type: datetime, format: "YYYY-MM-DDTHH:mm:ss[Z]" }
+      - { name: updated_at,  label: Updated at,  type: datetime, format: "YYYY-MM-DDTHH:mm:ss[Z]", required: false }
+      - { name: bookmarked,  label: Bookmarked,  type: boolean, default: false }
 
+    # IMPORTANT: do NOT define a 'body' field here.
+    # The editor’s large Markdown area is the body and becomes the template.
