@@ -1,25 +1,27 @@
-media:        # you can fine‑tune later
+media:
   input: public/prompts-media
   output: /prompts-media
 
 content:
   - name: prompts
     label: Prompts
-    type: collection          # ← required
-    path: prompts             # folder in the repo
+    type: collection
+    path: prompts              # folder in repo root
     create: true
-    slug: "{{slug}}"          # filename without extension
+    slug: "{{slug}}"
+    extension: md              # write .md files
+    format: frontmatter        # YAML front-matter + markdown body
     view:
-      fields: [title, locked] # optional sidebar columns
+      fields: [title, locked]
+
     fields:
-      # ── core ──
+      # ── front-matter fields ──
       - { name: id,          label: ID,          type: uuid }
       - { name: locked,      label: Locked,      type: boolean, default: false }
       - { name: title,       label: Title,       type: string }
       - { name: description, label: Description, type: text, required: false }
-      - { name: template,    label: Template,    type: code, options: { language: markdown } }
 
-      # ── input variables list ──
+      # Input variables (array of objects)
       - name: input_variables
         label: Input variables
         type: list
@@ -31,11 +33,18 @@ content:
           - { name: required,            label: Required,            type: boolean, default: true }
           - { name: variable_validation, label: Validation regex,    type: string, required: false }
 
-      # ── tags list ──
-      - { name: tags, label: Tags, type: list, field: { name: tag, label: Tag, type: string } }
+      # Tags must be a list of strings (not objects)
+      - name: tags
+        label: Tags
+        type: list
+        items:
+          type: string
 
-      # ── timestamps & bookmark ──
-      - { name: created_at,  label: Created at,  type: date }
-      - { name: updated_at,  label: Updated at,  type: date, required: false }
+      # Timestamps & bookmark
+      - { name: created_at,  label: Created at,  type: datetime, format: "YYYY-MM-DDTHH:mm:ss.SSSZ" }
+      - { name: updated_at,  label: Updated at,  type: datetime, format: "YYYY-MM-DDTHH:mm:ss.SSSZ", required: false }
       - { name: bookmarked,  label: Bookmarked,  type: boolean, default: false }
+
+      # ── markdown body becomes the prompt template ──
+      - { name: body, label: Template, type: markdown }
 
