@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { atom, useAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import { z } from "zod";
@@ -37,23 +37,17 @@ const getInitialConfig = (): Config => {
   }
   try {
     const raw = localStorage.getItem("promptConfig");
-    if (!raw) {
-      return {
-        selected: null,
-        isInitialized: false,
-        shouldLoadDefaults: true,
-        firstRun: true,
-      };
-    }
-    const parsed = JSON.parse(raw);
-    const result = configSchema.safeParse(parsed);
-    if (result.success) {
-      return {
-        selected: result.data.selected ?? null,
-        isInitialized: result.data.isInitialized ?? false,
-        shouldLoadDefaults: result.data.shouldLoadDefaults ?? true,
-        firstRun: result.data.firstRun ?? true,
-      };
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const result = configSchema.safeParse(parsed);
+      if (result.success) {
+        return {
+          selected: result.data.selected ?? null,
+          isInitialized: result.data.isInitialized ?? false,
+          shouldLoadDefaults: result.data.shouldLoadDefaults ?? true,
+          firstRun: result.data.firstRun ?? true,
+        };
+      }
     }
   } catch {}
   return {
@@ -69,8 +63,8 @@ const getInitialConfig = (): Config => {
 const configAtom = atomWithStorage<Config>("promptConfig", getInitialConfig(), {
   getItem: (key) => {
     if (typeof window === "undefined") return getInitialConfig();
-    const v = localStorage.getItem(key);
     try {
+      const v = localStorage.getItem(key);
       return v ? JSON.parse(v) : getInitialConfig();
     } catch {
       return getInitialConfig();
@@ -99,8 +93,8 @@ const configAtom = atomWithStorage<Config>("promptConfig", getInitialConfig(), {
 export const promptsAtom = atomWithStorage<PromptStructure[]>("prompts", [], {
   getItem: (key) => {
     if (typeof window === "undefined") return [];
-    const v = localStorage.getItem(key);
     try {
+      const v = localStorage.getItem(key);
       return v ? JSON.parse(v) : [];
     } catch {
       return [];
@@ -130,8 +124,8 @@ export const draftPromptsAtom = atomWithStorage<Record<string, PromptStructure>>
   {
     getItem: (key) => {
       if (typeof window === "undefined") return {};
-      const v = localStorage.getItem(key);
       try {
+        const v = localStorage.getItem(key);
         return v ? JSON.parse(v) : {};
       } catch {
         return {};
@@ -156,9 +150,6 @@ export const draftPromptsAtom = atomWithStorage<Record<string, PromptStructure>>
   }
 );
 
-// in-memory only: last known version from server
-const versionAtom = atom<string | null>(null);
-
 /* -------------------- public hooks -------------------- */
 
 export function usePrompt() {
@@ -169,7 +160,9 @@ export const usePrompts = () => {
   const [prompts, setPrompts] = useAtom(promptsAtom);
   const [draftPrompts, setDraftPrompts] = useAtom(draftPromptsAtom);
   const [config, setConfig] = useAtom(configAtom);
-  const [serverVersion, setServerVersion] = useAtom(versionAtom);
+
+  // Use React state for the server version header to avoid Jotai typing quirks
+  const [serverVersion, setServerVersion] = useState<string | null>(null);
 
   const initRef = useRef(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -180,11 +173,11 @@ export const usePrompts = () => {
     try {
       const data = (await res.json()) as PromptStructure[];
       setPrompts(data || []);
-      if (ver) setServerVersion(ver);
+      setServerVersion(ver);
     } catch {
-      // ignore
+      // ignore JSON errors
     }
-  }, [setPrompts, setServerVersion]);
+  }, [setPrompts]);
 
   // Initial load
   useEffect(() => {
@@ -300,7 +293,7 @@ export const usePrompts = () => {
     [prompts, setPrompts]
   );
 
-  // ✅ restored so components that call `toggleLock` keep working
+  // keep this for existing components
   const toggleLock = useCallback(
     (id: string) => {
       setPrompts(
@@ -388,7 +381,7 @@ export const usePrompts = () => {
     createPrompt,
     deletePrompt,
     editPrompt,
-    toggleLock,       // ← back in the return
+    toggleLock,
     toggleBookmark,
     draftPrompts,
     saveDraftPrompt,
