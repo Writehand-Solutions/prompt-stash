@@ -1,4 +1,4 @@
-import { NextResponse, NextResponse as Response } from "next/server";
+import { NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
 import slugify from "slugify";
@@ -117,19 +117,19 @@ export async function GET() {
     computeVersion(),
   ]);
 
-  return new Response(JSON.stringify(prompts), {
+  return new NextResponse(JSON.stringify(prompts), {
     headers: {
       "Content-Type": "application/json",
       "Cache-Control": "no-store, max-age=0",
-      "x-prompts-version": version, // <-- lets the frontend know if anything changed
+      "x-prompts-version": version,
     },
   });
 }
 
-// Lightweight version check (no body)
+// Lightweight version check
 export async function HEAD() {
   const version = await computeVersion();
-  return new Response(null, {
+  return new NextResponse(null, {
     headers: {
       "Cache-Control": "no-store, max-age=0",
       "x-prompts-version": version,
@@ -177,7 +177,18 @@ export async function POST(req: Request) {
     const mdContent = `---\n${yaml.dump(fm)}---\n${template || ""}`;
 
     await fs.writeFile(filePath, mdContent, "utf8");
-    return NextResponse.json({ success: true }, { status: 201 });
+
+    const version = await computeVersion();
+    return NextResponse.json(
+      { success: true },
+      {
+        status: 201,
+        headers: {
+          "x-prompts-version": version,
+          "Cache-Control": "no-store, max-age=0",
+        },
+      }
+    );
   } catch (e: any) {
     return NextResponse.json(
       { error: e?.message || "Unknown error" },
