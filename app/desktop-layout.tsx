@@ -51,50 +51,46 @@ interface PromptLibraryProps {
 }
 const steps = [
   {
-    title: "Welcome to Cult UI",
-    short_description: "Discover our modern component library",
+    title: "Welcome to the Prompt Builder & Library",
+    short_description: "Build stronger prompts, faster",
     full_description:
-      "Welcome to Cult UI! Let's explore how our beautifully crafted components can help you build stunning user interfaces with ease.",
+      "Welcome to Productised.ai Prompt Builder! Let’s explore how reusable templates, live testing, and simple organisation help you create better prompts in less time.",
     media: {
       type: "image" as const,
       src: "/feature-3.webp",
-      alt: "Cult UI components overview",
+      alt: "Productised Prompt Builder & Library",
     },
   },
   {
-    title: "Customizable Components",
-    short_description: "Style and adapt to your needs",
+    title: "Customisable Templates",
+    short_description: "Add variables, notes & tone",
     full_description:
-      "Every component is built with customization in mind. Use our powerful theming system with Tailwind CSS to match your brand perfectly.",
+      "Make prompts your own. Add helpful blanks (like audience, goal, tone), include short notes for each field, and keep your style consistent across every run.",
     media: {
       type: "image" as const,
       src: "/feature-2.webp",
-      alt: "Component customization interface",
-    },
-    action: {
-      label: "View Theme Builder",
-      href: "/docs/theming",
+      alt: "Customisable Templates",
     },
   },
   {
-    title: "Responsive & Accessible",
-    short_description: "Built for everyone",
+    title: "Organised & Secure",
+    short_description: "Tags, folders & safe key storage",
     full_description:
-      "All components are fully responsive and follow WAI-ARIA guidelines, ensuring your application works seamlessly across all devices and is accessible to everyone.",
+      "Find what you need fast with folders and tags, pin favorites for daily use, and keep your API keys safe. Private by default, built for focus.",
     media: {
       type: "image" as const,
       src: "/feature-1.webp",
-      alt: "Responsive design demonstration",
+      alt: "Organised & Secure",
     },
   },
   {
-    title: "Start Building",
-    short_description: "Create your next project",
+    title: "Start Building AI Products",
+    short_description: "Connect to productised.ai",
     full_description:
-      "You're ready to start building! Check out our comprehensive documentation and component examples to create your next amazing project.",
+      "Put your best prompts to work inside Productised.ai. Connect a quick form, generate clear results on a clean page, and publish a tool your audience and clients.",
     action: {
-      label: "View Components",
-      href: "/docs/components",
+      label: "Start Productising",
+      href: "https://www.productised.ai/pricing",
     },
   },
 ];
