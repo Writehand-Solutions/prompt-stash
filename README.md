@@ -1,8 +1,8 @@
-# Cult Prompt Stash
+# Prompt Builder
 
 ## What is this project?
 
-Cult Prompt Stash is an advanced AI Prompt Management System designed to help users create, organize, and manage prompts for various AI models. It features a web-based interface with a robust AI agent system and extensible tools, streamlining your AI prompt workflow.
+Prompt Builder is an advanced AI Prompt Management System designed to help users create, organize, and manage prompts for various AI models. It features a web-based interface with a robust AI agent system and extensible tools, streamlining your AI prompt workflow.
 
 ## Key Features
 
