@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Mail, ArrowRight, Sparkles } from "lucide-react"
+import { Mail, ArrowRight } from "lucide-react"
+import Image from "next/image"
 import { toast } from "sonner"
 
 import { useAuth } from "@/lib/hooks/use-auth"
@@ -18,13 +19,12 @@ export function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!email) {
       toast.error("Please enter your email address")
       return
     }
 
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       toast.error("Please enter a valid email address")
@@ -34,19 +34,33 @@ export function LoginPage() {
     setIsLoading(true)
 
     try {
-      // Simulate magic link authentication
-      // In a real app, this would send a magic link to the user's email
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // For demo purposes, we'll just log them in directly
+      // Simulate magic link auth (replace with real flow if needed)
+      await new Promise((resolve) => setTimeout(resolve, 1200))
+
+      // Demo login
       login({
         email,
         id: `user-${Date.now()}`,
-        name: email.split('@')[0],
+        name: email.split("@")[0],
       })
-      
+
+      // Send to SwipeOne generic webhook
+      await fetch(
+        "https://integrations-api.swipeone.com/webhooks/apps/generic-webhooks/68c0f2492bed62f785822ae6",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            source: "productised-prompt-builder",
+            timestamp: new Date().toISOString(),
+          }),
+        }
+      )
+
       toast.success("Welcome to Productised Prompt Builder!")
     } catch (error) {
+      console.error(error)
       toast.error("Failed to send magic link. Please try again.")
     } finally {
       setIsLoading(false)
@@ -54,14 +68,23 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{
+        backgroundColor: "#ffffff",
+        opacity: 1,
+        backgroundImage: "radial-gradient(#a5a5a5 0.45px, #ffffff 0.45px)",
+        backgroundSize: "9px 9px",
+      }}
+    >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="w-full max-w-md"
       >
-        <TextureCard className="w-full">
+        {/* Main card with drop shadow */}
+        <TextureCard className="w-full shadow-2xl">
           <TextureCardHeader className="text-center pb-8">
             <motion.div
               initial={{ scale: 0.8 }}
@@ -69,9 +92,17 @@ export function LoginPage() {
               transition={{ delay: 0.2, duration: 0.5 }}
               className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600"
             >
-              <Sparkles className="h-8 w-8 text-white" />
+              {/* Replace sparkle icon with /public/icon.png */}
+              <Image
+                src="/icon.png"
+                alt="Productised icon"
+                width={32}
+                height={32}
+                className="h-8 w-8"
+                priority
+              />
             </motion.div>
-            
+
             <motion.h1
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -80,7 +111,7 @@ export function LoginPage() {
             >
               Welcome to Productised Prompt Builder
             </motion.h1>
-            
+
             <motion.p
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -118,14 +149,15 @@ export function LoginPage() {
                 </div>
               </div>
 
+              {/* Button with #f8d381 */}
               <Button
                 type="submit"
-                className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium"
+                className="w-full h-12 bg-[#f8d381] text-gray-900 hover:bg-[#f8d381]/90 font-medium"
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <div className="flex items-center space-x-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
                     <span>Verifying email...</span>
                   </div>
                 ) : (
@@ -152,4 +184,4 @@ export function LoginPage() {
       </motion.div>
     </div>
   )
-} 
+}
