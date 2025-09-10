@@ -34,10 +34,8 @@ export function LoginPage() {
     setIsLoading(true)
 
     try {
-      // Simulate magic link auth (replace with real flow if needed)
       await new Promise((resolve) => setTimeout(resolve, 1200))
 
-      // Demo login
       login({
         email,
         id: `user-${Date.now()}`,
@@ -84,104 +82,106 @@ export function LoginPage() {
         transition={{ duration: 0.6 }}
         className="w-full max-w-2xl"
       >
-        {/* Main card with solid white background + rounded corners + shadow */}
-        <TextureCard className="w-full bg-white dark:bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-visible">
-          <TextureCardHeader className="text-center pb-8">
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-              // White with light grey gradient circle behind logo
-              className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-white to-gray-200 ring-1 ring-gray-200"
-            >
-              <Image
-                src="/icon.png"
-                alt="Productised icon"
-                width={32}
-                height={32}
-                className="h-8 w-8"
-                priority
-              />
-            </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900"
-            >
-              Welcome to Productised Prompt Builder
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-              className="mt-2 text-sm text-gray-600"
-            >
-              Enter your email to get started.
-            </motion.p>
-          </TextureCardHeader>
-
-          <TextureCardContent className="bg-white">
-            <motion.form
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-              onSubmit={handleSubmit}
-              className="space-y-6"
-            >
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium">
-                  Email address
-                </Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 h-12"
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Button with #f8d381 */}
-              <Button
-                type="submit"
-                className="w-full h-12 bg-[#f8d381] text-gray-900 hover:bg-[#f8d381]/90 font-medium rounded-md"
-                disabled={isLoading}
+        {/* OUTER WRAPPER owns the rounded corners + border + shadow */}
+        <div className="rounded-2xl border border-gray-200 bg-white shadow-2xl">
+          {/* Make TextureCard transparent and non-clipping so it can’t cut corners */}
+          <TextureCard className="bg-transparent border-0 shadow-none overflow-visible rounded-2xl">
+            <TextureCardHeader className="text-center pb-8">
+              <motion.div
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                // White with light grey gradient circle behind logo + subtle ring
+                className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-white to-gray-200 ring-1 ring-gray-200"
               >
-                {isLoading ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
-                    <span>Verifying email...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <span>Get Instant Access</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </div>
-                )}
-              </Button>
-            </motion.form>
+                <Image
+                  src="/icon.png"
+                  alt="Productised icon"
+                  width={32}
+                  height={32}
+                  className="h-8 w-8"
+                  priority
+                />
+              </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.7, duration: 0.5 }}
-              className="mt-8 text-center"
-            >
-              <p className="text-xs text-gray-500">
-                After entering your email, you will get immediate access, no password required.
-              </p>
-            </motion.div>
-          </TextureCardContent>
-        </TextureCard>
+              <motion.h1
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900"
+              >
+                Welcome to Productised Prompt Builder
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+                className="mt-2 text-sm text-gray-600"
+              >
+                Enter your email to get started.
+              </motion.p>
+            </TextureCardHeader>
+
+            <TextureCardContent className="bg-white rounded-b-2xl">
+              <motion.form
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+                onSubmit={handleSubmit}
+                className="space-y-6"
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium">
+                    Email address
+                  </Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="pl-10 h-12"
+                      disabled={isLoading}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full h-12 bg-[#f8d381] text-gray-900 hover:bg-[#f8d381]/90 font-medium rounded-md"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-900 border-t-transparent" />
+                      <span>Verifying email...</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <span>Get Instant Access</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </div>
+                  )}
+                </Button>
+              </motion.form>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7, duration: 0.5 }}
+                className="mt-8 text-center"
+              >
+                <p className="text-xs text-gray-500">
+                  After entering your email, you will get immediate access, no password required.
+                </p>
+              </motion.div>
+            </TextureCardContent>
+          </TextureCard>
+        </div>
       </motion.div>
     </div>
   )
