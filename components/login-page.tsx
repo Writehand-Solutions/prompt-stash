@@ -70,7 +70,7 @@ export function LoginPage() {
   return (
     <div
       className="min-h-screen flex items-center justify-center p-4"
-      // Page background (dotted). The card itself is solid white so dots don't show inside it.
+      // Page background (dotted). Card stays solid white.
       style={{
         backgroundColor: "#ffffff",
         opacity: 1,
@@ -84,14 +84,14 @@ export function LoginPage() {
         transition={{ duration: 0.6 }}
         className="w-full max-w-2xl"
       >
-        {/* Main card with solid white background + border + strong shadow */}
-        <TextureCard className="w-full bg-white dark:bg-white border border-gray-200 rounded-2xl shadow-2xl">
+        {/* Main card with solid white background + rounded corners + shadow */}
+        <TextureCard className="w-full bg-white dark:bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-visible">
           <TextureCardHeader className="text-center pb-8">
             <motion.div
               initial={{ scale: 0.9 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
-              // White with light grey gradient circle behind logo + subtle ring
+              // White with light grey gradient circle behind logo
               className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-white to-gray-200 ring-1 ring-gray-200"
             >
               <Image
@@ -153,7 +153,7 @@ export function LoginPage() {
               {/* Button with #f8d381 */}
               <Button
                 type="submit"
-                className="w-full h-12 bg-[#f8d381] text-gray-900 hover:bg-[#f8d381]/90 font-medium"
+                className="w-full h-12 bg-[#f8d381] text-gray-900 hover:bg-[#f8d381]/90 font-medium rounded-md"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -186,3 +186,4 @@ export function LoginPage() {
     </div>
   )
 }
+
