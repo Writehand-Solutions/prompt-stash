@@ -1,62 +1,70 @@
-id: a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p
+---
+id: 8c1f2a3b-4d5e-6f70-8a9b-1c2d3e4f5a6b
 locked: false
-title: LinkedIn Headline Optimizer
-description: Create a clear, high-impact LinkedIn headline that positions the user for their ideal audience and outcome.
+title: LinkedIn Headline Generator
+description: Generate a punchy, outcome-driven LinkedIn headline tailored to a specific audience, offer, and positioning.
 input_variables:
-  - name: name
-    description: The person’s name (optional, used for context only)
-    type: string
-    required: false
-    variable_validation: ^.*$
-  - name: role_or_expertise
-    description: The primary role, expertise, or identity the person wants to be known for
-    type: string
-    required: true
-    variable_validation: ^.+$
-  - name: target_audience
-    description: The specific audience or ICP the person serves
-    type: string
-    required: true
-    variable_validation: ^.+$
-  - name: core_outcome
-    description: The main result, transformation, or value delivered to the audience
-    type: string
-    required: true
-    variable_validation: ^.+$
-  - name: differentiation
-    description: What makes their approach unique (method, philosophy, angle, or mechanism)
-    type: string
-    required: false
-    variable_validation: ^.*$
-tags:
-  - LinkedIn
-  - Personal Branding
-  - Positioning
-  - Professional Headline
-examples:
-  - input:
-      name: Sam Sutherland
-      role_or_expertise: AI Productisation Strategist
-      target_audience: coaches and consultants
-      core_outcome: turn their expertise into scalable AI-powered products
-      differentiation: without chatbots or custom code
-    output: AI Productisation Strategist | Helping Coaches & Consultants Turn Expertise into Scalable AI Products — Without Chatbots or Code
-created_at: '2025-12-19T02:00:00Z'
-updated_at: null
-bookmarked: false
+
+* name: role_or_positioning
+  description: The primary role or positioning you want to lead with
+  type: string
+  required: true
+  variable_validation: ^.+$
+* name: target_audience
+  description: Who you help (ICP)
+  type: string
+  required: true
+  variable_validation: ^.+$
+* name: core_outcome
+  description: The main result or transformation you create
+  type: string
+  required: true
+  variable_validation: ^.+$
+* name: proof_or_credibility
+  description: Credibility signal (optional) e.g. Founder @ X, ex-Company, MBA, 10+ yrs, $X generated
+  type: string
+  required: false
+  variable_validation: ^.*$
+* name: keywords
+  description: A comma-separated list of keywords to include (optional)
+  type: string
+  required: false
+  variable_validation: ^[\w\s]+(,[\w\s]+)*$
+  tags:
+* LinkedIn
+* Personal Branding
+* Positioning
+  examples:
+* input:
+  role_or_positioning: AI Productisation Pioneer | Co-Founder & CEO @ Productised.ai
+  target_audience: coaches and consultants
+  core_outcome: turn expertise into AI-powered lead-gen products that deliver instant personalised reports and slides
+  proof_or_credibility: MBA (Digital Transformation)
+  keywords: AI lead generation, client delivery, AI products
+  output: |-
+  Option 1: AI Productisation Pioneer | Co-Founder & CEO @ Productised.ai | Helping Coaches & Consultants Turn Expertise into AI Lead-Gen Products (Instant Reports + Slides)
+  Option 2: Co-Founder & CEO @ Productised.ai | AI Productisation | Helping Coaches & Consultants Convert Leads with Instant, Personalised Reports & Presentations
+  Option 3: AI Productisation (MBA) | Building Productised.ai | Helping Coaches & Consultants Package Expertise into AI Products That Win Better Leads
+  created_at: '2025-12-19T02:00:00Z'
+  updated_at: null
+  bookmarked: false
+
 ---
 
-Create a new LinkedIn headline using the inputs below.
+Generate LinkedIn headlines using the following inputs.
 
-Guidelines:
-- Keep it concise (ideally 120–220 characters)
-- Lead with role or positioning
-- Clearly state who it’s for and the outcome
-- Use separators like “|” or “—” for clarity
-- Avoid buzzwords and vague claims
+Rules:
 
-Name (optional): {name}
-Role / Expertise: {role_or_expertise}
+* Provide 8–12 headline options.
+* Keep each headline under 220 characters.
+* Use separators like “|” or “—” for clarity.
+* Lead with role/positioning, then audience + outcome.
+* If provided, naturally weave in credibility and keywords (don’t stuff).
+* Avoid vague buzzwords (e.g., “guru”, “ninja”, “world-class”).
+
+Inputs:
+Role/Positioning: {role_or_positioning}
 Target Audience: {target_audience}
 Core Outcome: {core_outcome}
-Differentiation (optional): {differentiation}
+Proof/Credibility (optional): {proof_or_credibility}
+Keywords (optional): {keywords}
